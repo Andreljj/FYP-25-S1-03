@@ -34,7 +34,7 @@ const ProductListingScreen = () => {
   // Predefined options
   const categories = [
     'Tops', 'Bottoms', 'Dresses', 'Outerwear', 
-    'Footwear', 'Accessories', 'Others'
+    'Footwear'
   ];
   
   const conditions = [

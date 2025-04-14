@@ -30,7 +30,7 @@ export default function AboutScreen() {
         {/* Company Banner */}
         <View style={styles.bannerContainer}>
           <Image
-            source={require('./images/about us.png')}
+            source={require('./images/aboutUs.png')}
             style={styles.bannerImage}
             resizeMode="cover"
           />

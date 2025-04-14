@@ -1,3 +1,4 @@
+// app/product/[id].tsx
 import React, { useState, useEffect } from "react";
 import { 
   View, 
@@ -13,103 +14,17 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { mockProducts } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get("window");
 
-// Define a type for the product data structure
-type Product = {
-  id: string;
-  name: string;
-  image: string;
-  images: string[];
-  price: string;
-  originalPrice: string;
-  description: string;
-  sizes: string[];
-  condition: string;
-  brand: string;
-  material: string;
-  sellerName: string;
-  sellerRating: number;
-  totalSales: number;
-};
-
-// Define the type for the product data object with string index signature
-type ProductDataType = {
-  [key: string]: Product;
-};
-
-// Sample product data - in a real app, you would fetch this based on the product ID
-const productData: ProductDataType = {
-  "1": {
-    id: "1",
-    name: "Checkered H&M Shirt",
-    image: "https://images.hardloop.fr/587266-large_default/wrangler-mixed-material-shirt-second-hand-shirt-mens-multicolored-l.jpg",
-    images: [
-      "https://images.hardloop.fr/587266-large_default/wrangler-mixed-material-shirt-second-hand-shirt-mens-multicolored-l.jpg",
-      "https://i.pinimg.com/originals/b8/21/65/b82165d9fc56d21b858a47dd22bd9dbd.jpg",
-      "https://sc04.alicdn.com/kf/Hdd40de37ff7c4bdab18fb9d58f4685a9B.jpg"
-    ],
-    price: "$28.50",
-    originalPrice: "$45.00",
-    description: "Classic checkered pattern shirt with button-down collar. Made from soft, breathable cotton blend fabric. Perfect for casual or semi-formal occasions. This shirt features a comfortable regular fit and versatile design that pairs easily with jeans or chinos.",
-    sizes: ["S", "XL"],
-    condition: "Like New",
-    brand: "H&M",
-    material: "60% Cotton, 40% Polyester",
-    sellerName: "FashionReseller22",
-    sellerRating: 4.8,
-    totalSales: 4
-  },
-  "2": {
-    id: "2",
-    name: "Purple Baju Kurung",
-    image: "https://daganghalal.blob.core.windows.net/42742/Product/baju-kurung-moden-songket-1704693764101.jpg",
-    images: [
-      "https://daganghalal.blob.core.windows.net/42742/Product/baju-kurung-moden-songket-1704693764101.jpg",
-      "https://cf.shopee.com.my/file/df31e9a05fbedb32102fd76a50c9c667",
-      "https://cf.shopee.com.my/file/58e2b27f8d90de8e98023ec2cfa2a74a"
-    ],
-    price: "$45.99",
-    originalPrice: "$75.00",
-    description: "Elegant traditional attire in vibrant purple. Features delicate embroidery and a modern cut. Comfortable for all-day wear during celebrations or formal events. Made with high-quality songket fabric that offers both beauty and durability.",
-    sizes: ["S", "L"],
-    condition: "Excellent",
-    brand: "Traditional Crafts",
-    material: "Songket Fabric",
-    sellerName: "CulturalTreasures",
-    sellerRating: 4.9,
-    totalSales: 12
-  },
-  "3": {
-    id: "3",
-    name: "Khaki Jacket",
-    image: "https://static2.goldengoose.com/public/Style/ECOMM/GMP00834.P001488-15527.jpg",
-    images: [
-      "https://static2.goldengoose.com/public/Style/ECOMM/GMP00834.P001488-15527.jpg",
-      "https://www.prada.com/content/dam/pradanux_products/S/SGM/SGM191/1WMZF0031/SGM191_1WMZ_F0031_S_202_SLF.png",
-      "https://media.endclothing.com/media/f_auto,q_auto:eco/prodmedia/media/catalog/product/3/0/30-01-2020_uniqlo_blocktechu-pocketblouson_32-khaki_185766-56_rc_1.jpg"
-    ],
-    price: "$39.75",
-    originalPrice: "$89.00",
-    description: "Versatile khaki jacket with quilted design. Features ribbed collar and cuffs, multiple pockets, and premium quality material. Ideal for cool weather. This lightweight jacket offers excellent warmth without bulk, making it perfect for layering.",
-    sizes: ["M", "L"],
-    condition: "Good",
-    brand: "Golden Goose",
-    material: "65% Cotton, 35% Polyamide",
-    sellerName: "VintageTrends",
-    sellerRating: 4.6,
-    totalSales: 8
-  }
-};
-
 export default function ProductDetails() {
-  // Always call hooks at the top level, in the same order
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState(null);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -122,42 +37,78 @@ export default function ProductDetails() {
       // Get the ID from params and provide fallback
       const productId = typeof params.id === 'string' ? params.id : '1';
       
-      // Get the product or default to the first one
-      const selectedProduct = productData[productId];
+      // Find the product in mockProducts
+      const selectedProduct = mockProducts.find(p => p.id === productId);
       
       if (!selectedProduct) {
-        console.warn(`Product with ID ${productId} not found, using default product`);
-        setProduct(productData["1"]);
+        console.warn(`Product with ID ${productId} not found, using first product`);
+        setProduct(mockProducts[0]);
       } else {
         setProduct(selectedProduct);
       }
       
-      // Only calculate discount if product exists
-      if (selectedProduct) {
-        const originalPrice = parseFloat(selectedProduct.originalPrice.replace('$', ''));
-        const currentPrice = parseFloat(selectedProduct.price.replace('$', ''));
-        const discount = Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
-        setDiscountPercentage(discount);
-      }
+      // Set discount percentage - assuming standard product doesn't have original price
+      // We'll use a default 0% discount or simulate a 15% discount
+      setDiscountPercentage(15);
     } catch (error) {
       console.error("Error loading product:", error);
-      // Use the first product as fallback
-      setProduct(productData["1"]);
+      setProduct(mockProducts[0]);
     } finally {
       setLoading(false);
     }
   }, [params.id]);
 
-  // Handle Add to Cart
+  // Generate product images (centralized products only have one image)
+  const getProductImages = (imageUrl) => {
+    // Create an array of 3 images using the same image
+    return [imageUrl, imageUrl, imageUrl];
+  };
+
+  // Handle Add to Cart - Directly redirect to login page if not authenticated
   const handleAddToCart = () => {
-    if (!selectedSize) {
-      Alert.alert("Size Required", "Please select a size before adding to cart");
+    if (!isAuthenticated) {
+      // Directly redirect to Login page if user is not logged in
+      router.push("/Login");
       return;
     }
     
+    // User is authenticated, proceed with adding to cart
     if (product) {
-      Alert.alert("Added to Cart", `${product.name} (${selectedSize}) has been added to your cart!`);
+      Alert.alert("Added to Cart", `${product.name} (Size: ${product.size}) has been added to your cart!`);
     }
+  };
+
+  // Handle Add to Wishlist - Directly redirect to login page if not authenticated
+  const handleAddToWishlist = () => {
+    if (!isAuthenticated) {
+      // Directly redirect to Login page if user is not logged in
+      router.push("/Login");
+      return;
+    }
+    
+    // User is authenticated, proceed with adding to wishlist
+    if (product) {
+      Alert.alert("Added to Wishlist", `${product.name} has been added to your wishlist!`);
+    }
+  };
+
+  // Handle Mix n Match - Also directly redirect
+  const handleMixAndMatch = () => {
+    if (!isAuthenticated) {
+      // Directly redirect to Login page
+      router.push("/Login");
+      return;
+    }
+    
+    // Logic for Mix n Match feature
+    Alert.alert("Mix n Match", "Opening Mix n Match tool for this item");
+    // Navigate to Mix n Match screen
+    // router.push(`/mixnmatch?productId=${product.id}`);
+  };
+
+  // Handle navigate to seller profile
+  const handleSellerProfile = (sellerName) => {
+    router.push(`/seller/${sellerName}`);
   };
 
   // If product is not loaded yet, show a simple loading state
@@ -171,6 +122,14 @@ export default function ProductDetails() {
       </SafeAreaView>
     );
   }
+
+  // Generate display price - adding $ prefix
+  const displayPrice = `$${product.price.toFixed(2)}`;
+  // Calculate original price from discount percentage
+  const originalPrice = `$${(product.price / (1 - discountPercentage/100)).toFixed(2)}`;
+  
+  // Generated images array from single image
+  const productImages = getProductImages(product.image);
   
   return (
     <SafeAreaView style={styles.safeContainer}>
@@ -182,7 +141,7 @@ export default function ProductDetails() {
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Product Details</Text>
-        <TouchableOpacity onPress={() => router.push("/register")} style={styles.favoriteButton}>
+        <TouchableOpacity onPress={() => isAuthenticated ? router.push("/wishlist") : router.push("/Login")} style={styles.favoriteButton}>
           <Ionicons 
             name="heart-outline" 
             size={28} 
@@ -195,7 +154,7 @@ export default function ProductDetails() {
         {/* Product Image Carousel */}
         <View style={styles.imageCarouselContainer}>
           <Image 
-            source={{ uri: product.images[currentImageIndex] }} 
+            source={{ uri: productImages[currentImageIndex] }} 
             style={styles.productImage}
             resizeMode="contain"
           />
@@ -209,7 +168,7 @@ export default function ProductDetails() {
           
           {/* Image Navigation Dots */}
           <View style={styles.imageDots}>
-            {product.images.map((_, index) => (
+            {productImages.map((_, index) => (
               <TouchableOpacity 
                 key={index}
                 onPress={() => setCurrentImageIndex(index)}
@@ -231,7 +190,7 @@ export default function ProductDetails() {
           showsHorizontalScrollIndicator={false}
           style={styles.thumbnailContainer}
         >
-          {product.images.map((image, index) => (
+          {productImages.map((image, index) => (
             <TouchableOpacity 
               key={index}
               onPress={() => setCurrentImageIndex(index)}
@@ -252,13 +211,21 @@ export default function ProductDetails() {
           <Text style={styles.productName}>{product.name}</Text>
           
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>{product.price}</Text>
-            <Text style={styles.originalPrice}>{product.originalPrice}</Text>
+            <Text style={styles.price}>{displayPrice}</Text>
+            <Text style={styles.originalPrice}>{originalPrice}</Text>
           </View>
           
-          <View style={styles.conditionContainer}>
-            <Text style={styles.conditionLabel}>Condition:</Text>
-            <Text style={styles.conditionValue}>{product.condition}</Text>
+          {/* Size and Condition displayed together */}
+          <View style={styles.productMetaContainer}>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>Size:</Text>
+              <Text style={styles.metaValue}>{product.size}</Text>
+            </View>
+            
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>Condition:</Text>
+              <Text style={styles.metaValue}>{product.condition}</Text>
+            </View>
           </View>
           
           <View style={styles.divider} />
@@ -268,16 +235,24 @@ export default function ProductDetails() {
             <Text style={styles.sellerTitle}>Seller</Text>
             <View style={styles.sellerInfoRow}>
               <View>
-                <Text style={styles.sellerName}>{product.sellerName}</Text>
+                <TouchableOpacity onPress={() => handleSellerProfile(product.seller)}>
+                  <Text style={styles.sellerName}>{product.seller}</Text>
+                </TouchableOpacity>
                 <View style={styles.ratingContainer}>
                   <Ionicons name="star" size={16} color="#FFD700" />
                   <Text style={styles.ratingText}>
-                    {product.sellerRating} · {product.totalSales} sales
+                    4.8 · 24 sales {/* Mock data since mockProducts doesn't have this */}
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.contactButton}>
-                <Text style={styles.contactButtonText}>Contact</Text>
+              
+              {/* Mix n Match Button */}
+              <TouchableOpacity 
+                style={styles.mixMatchButton}
+                onPress={handleMixAndMatch}
+              >
+                <Ionicons name="color-wand-outline" size={16} color="#0077b3" style={styles.mixMatchIcon} />
+                <Text style={styles.mixMatchText}>Mix n Match</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -286,63 +261,49 @@ export default function ProductDetails() {
           
           {/* Product Details */}
           <Text style={styles.sectionTitle}>Product Details</Text>
-          <Text style={styles.description}>{product.description}</Text>
+          <Text style={styles.description}>
+            This {product.name} is in {product.condition} condition. Perfect for any occasion. 
+            Made with quality materials and excellent craftsmanship.
+          </Text>
           
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Brand</Text>
-              <Text style={styles.detailValue}>{product.brand}</Text>
-            </View>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Material</Text>
-              <Text style={styles.detailValue}>{product.material}</Text>
-            </View>
+          {/* Only listing date shown - category, gender, and ID removed */}
+          <View style={styles.listedDateContainer}>
+            <Text style={styles.listedDateLabel}>Listed on</Text>
+            <Text style={styles.listedDateValue}>{product.datePosted.toLocaleDateString()}</Text>
           </View>
           
-          {/* Size Selection */}
-          <Text style={styles.sectionTitle}>Select Size</Text>
-          <View style={styles.sizeContainer}>
-            {product.sizes.map((size: string) => (
-              <TouchableOpacity
-                key={size}
-                style={[
-                  styles.sizeButton,
-                  selectedSize === size ? styles.selectedSizeButton : {}
-                ]}
-                onPress={() => setSelectedSize(size)}
-              >
-                <Text 
-                  style={[
-                    styles.sizeText,
-                    selectedSize === size ? styles.selectedSizeText : {}
-                  ]}
-                >
-                  {size}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.noteContainer}>
+            <Ionicons name="information-circle-outline" size={16} color="#666" />
+            <Text style={styles.noteText}>
+              This is a pre-owned item. As a second-hand item, it is sold as-is in the condition and size stated above.
+            </Text>
           </View>
         </View>
       </ScrollView>
       
-      {/* Fixed Add to Cart Button */}
+      {/* Fixed Bottom Action Bar with Add to Cart and Add to Wishlist buttons */}
       <View style={styles.bottomBar}>
         <TouchableOpacity 
-          style={[
-            styles.addToCartButton,
-            !selectedSize ? styles.disabledButton : {}
-          ]}
-          disabled={!selectedSize}
+          style={styles.wishlistButton}
+          onPress={handleAddToWishlist}
+        >
+          <Ionicons name="heart-outline" size={20} color="#0077b3" style={styles.wishlistIcon} />
+          <Text style={styles.wishlistText}>Add to Wishlist</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.addToCartButton}
           onPress={handleAddToCart}
         >
-          <Text style={styles.addToCartText}>
-            {selectedSize ? "Add to Cart" : "Select Size to Continue"}
-          </Text>
+          <Ionicons name="cart-outline" size={20} color="white" style={styles.cartIcon} />
+          <Text style={styles.addToCartText}>Add to Cart</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
+
+// ... styles remain the same ...
 
 const styles = StyleSheet.create({
   safeContainer: {
@@ -451,7 +412,7 @@ const styles = StyleSheet.create({
   priceContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 15,
   },
   price: {
     fontSize: 24,
@@ -464,18 +425,22 @@ const styles = StyleSheet.create({
     color: "#999",
     textDecorationLine: "line-through",
   },
-  conditionContainer: {
+  productMetaContainer: {
     flexDirection: "row",
-    alignItems: "center",
     marginBottom: 15,
   },
-  conditionLabel: {
-    fontSize: 16,
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 20,
+  },
+  metaLabel: {
+    fontSize: 15,
     color: "#666",
     marginRight: 5,
   },
-  conditionValue: {
-    fontSize: 16,
+  metaValue: {
+    fontSize: 15,
     fontWeight: "500",
     color: "#0077b3",
   },
@@ -501,7 +466,8 @@ const styles = StyleSheet.create({
   sellerName: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#333",
+    color: "#0077b3",
+    textDecorationLine: "underline",
   },
   ratingContainer: {
     flexDirection: "row",
@@ -513,15 +479,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-  contactButton: {
-    backgroundColor: "#f0f0f0",
+  mixMatchButton: {
+    backgroundColor: "#E6F3FA",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  contactButtonText: {
+  mixMatchIcon: {
+    marginRight: 5,
+  },
+  mixMatchText: {
     color: "#0077b3",
     fontWeight: "600",
+    fontSize: 14,
   },
   sectionTitle: {
     fontSize: 18,
@@ -536,49 +508,34 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 15,
   },
-  detailsGrid: {
-    flexDirection: "row",
-    marginBottom: 20,
+  listedDateContainer: {
+    marginBottom: 15,
   },
-  detailItem: {
-    flex: 1,
-  },
-  detailLabel: {
+  listedDateLabel: {
     fontSize: 14,
     color: "#999",
     marginBottom: 3,
   },
-  detailValue: {
+  listedDateValue: {
     fontSize: 14,
     color: "#333",
     fontWeight: "500",
   },
-  sizeContainer: {
+  noteContainer: {
     flexDirection: "row",
-    marginBottom: 10,
+    backgroundColor: "#f5f5f5",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
   },
-  sizeButton: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    minWidth: 45,
-    alignItems: "center",
+  noteText: {
+    fontSize: 13,
+    color: "#666",
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 18,
   },
-  selectedSizeButton: {
-    borderColor: "#0077b3",
-    backgroundColor: "rgba(0, 119, 179, 0.1)",
-  },
-  sizeText: {
-    fontSize: 14,
-    color: "#333",
-  },
-  selectedSizeText: {
-    color: "#0077b3",
-    fontWeight: "bold",
-  },
+  // Bottom bar with two buttons
   bottomBar: {
     position: "absolute",
     bottom: 0,
@@ -596,15 +553,40 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 3,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  wishlistButton: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
+    paddingVertical: 15,
+    borderRadius: 8,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#0077b3",
+  },
+  wishlistIcon: {
+    marginRight: 8,
+  },
+  wishlistText: {
+    color: "#0077b3",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   addToCartButton: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "#0077b3",
     paddingVertical: 15,
     borderRadius: 8,
-    alignItems: "center",
   },
-  disabledButton: {
-    backgroundColor: "#ccc",
+  cartIcon: {
+    marginRight: 8,
   },
   addToCartText: {
     color: "white",
