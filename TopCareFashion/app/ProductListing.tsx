@@ -1,3 +1,4 @@
+// app/ProductListing.tsx
 import React, { useState } from 'react';
 import { 
   View, 
@@ -10,15 +11,19 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  Modal,
+  FlatList,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 const ProductListingScreen = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [images, setImages] = useState<string[]>([]); // Array to store multiple images
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -27,9 +32,16 @@ const ProductListingScreen = () => {
     size: '',
     condition: '',
     category: '',
-    brand: ''
+    gender: ''
   });
   const [errors, setErrors] = useState({});
+  
+  // Modal states for dropdowns
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showConditionModal, setShowConditionModal] = useState(false);
+  const [showSizeModal, setShowSizeModal] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [showColorModal, setShowColorModal] = useState(false);
 
   // Predefined options
   const categories = [
@@ -38,35 +50,84 @@ const ProductListingScreen = () => {
   ];
   
   const conditions = [
-    'New with tags', 'Like new', 'Good', 'Fair', 'Poor'
+    'New with tags', 'Like new', 'Excellent', 'Good', 'Fair', 'Poor'
   ];
   
-  const sizes = [
+  const clothingSizes = [
     'XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'
   ];
+  
+  // Numerical footwear sizes
+  const footwearSizes = [
+    '35', '36', '37', '38', '39', '40', '41', '42', 
+    '43', '44', '45', '46', '47', '48'
+  ];
+  
+  const genders = [
+    'Men', 'Women', 'Unisex'
+  ];
+  
+  const colors = [
+    'Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 
+    'Pink', 'Purple', 'Brown', 'Gray', 'Beige', 'Multicolor'
+  ];
+
+  // Request permission for camera roll
+  React.useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to upload images.');
+        }
+      }
+    })();
+  }, []);
   
   // Handle back navigation
   const handleBack = () => {
     router.back();
   };
 
-  // Simulate image picker with a placeholder
-  const pickImage = () => {
-    // Placeholder URLs
-    const sampleImages = [
-      'https://pfst.cf2.poecdn.net/base/image/84623588901ca1f12d5bbc2fc3426defa41a363b407e7607e5802d472e795d77?w=800&h=800',
-      'https://pfst.cf2.poecdn.net/base/image/b166b1155fd21a4896628b92585029159f19f420888ca257b50436d1f24a15e5?w=1200&h=1600',
-      'https://pfst.cf2.poecdn.net/base/image/7488cb6de00f7424a2d16af0dd0c5c471385a0cf5f1c5719e5588c0b3a2e7028?w=800&h=800'
-    ];
-    
-    // Just pick a random image from the sample list
-    const randomIndex = Math.floor(Math.random() * sampleImages.length);
-    setSelectedImage(sampleImages[randomIndex]);
-    
-    // Clear the image error if it exists
-    if (errors.image) {
-      setErrors({...errors, image: ''});
+  // Get size options based on category
+  const getSizeOptions = () => {
+    return form.category === 'Footwear' ? footwearSizes : clothingSizes;
+  };
+
+  // Image picker function
+  const pickImage = async () => {
+    if (images.length >= 5) {
+      Alert.alert("Maximum Images", "You can only upload up to 5 images");
+      return;
     }
+    
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+  
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImages([...images, result.assets[0].uri]);
+        
+        // Clear the image error if it exists
+        if (errors.images) {
+          setErrors({...errors, images: ''});
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'There was a problem selecting the image.');
+    }
+  };
+
+  // Remove an image
+  const removeImage = (index) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
   };
 
   // Handle form changes
@@ -76,6 +137,11 @@ const ProductListingScreen = () => {
     // Clear error for this field if it exists
     if (errors[key]) {
       setErrors({...errors, [key]: ''});
+    }
+    
+    // Reset size when category changes
+    if (key === 'category') {
+      setForm(prev => ({ ...prev, size: '' }));
     }
   };
 
@@ -101,6 +167,10 @@ const ProductListingScreen = () => {
       newErrors.condition = 'Condition is required';
     }
     
+    if (!form.color) {
+      newErrors.color = 'Color is required';
+    }
+    
     if (!form.size) {
       newErrors.size = 'Size is required';
     }
@@ -109,8 +179,8 @@ const ProductListingScreen = () => {
       newErrors.description = 'Description is required';
     }
     
-    if (!selectedImage) {
-      newErrors.image = 'An image is required';
+    if (images.length === 0) {
+      newErrors.images = 'At least one image is required';
     }
     
     setErrors(newErrors);
@@ -146,47 +216,35 @@ const ProductListingScreen = () => {
     }, 1500);
   };
 
-  // Unified dropdown component that works on all platforms
-  const renderDropdown = (label, options, value, fieldName, errorMsg) => {
-    return (
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>{label}<Text style={styles.required}>*</Text></Text>
-        <TouchableOpacity 
-          style={[
-            styles.input,
-            errorMsg ? styles.inputError : null
-          ]}
-          onPress={() => {
-            Alert.alert(
-              `Select ${label}`,
-              '',
-              [
-                ...options.map(option => ({
-                  text: option,
-                  onPress: () => handleChange(fieldName, option)
-                })),
-                {
-                  text: 'Cancel',
-                  style: 'cancel'
-                }
-              ]
-            );
-          }}
-        >
-          <Text style={[styles.inputText, !value && styles.placeholderText]}>
+  // Create a custom Dropdown component
+  const Dropdown = ({label, value, onPress, required, error}) => (
+    <View style={styles.inputContainer}>
+      <Text style={styles.label}>
+        {label}{required && <Text style={styles.required}>*</Text>}
+      </Text>
+      <TouchableOpacity
+        style={[styles.input, error ? styles.inputError : null]}
+        onPress={onPress}
+      >
+        <View style={styles.dropdownContent}>
+          <Text style={[
+            styles.inputText,
+            !value && styles.placeholderText
+          ]}>
             {value || `Select ${label.toLowerCase()}`}
           </Text>
-        </TouchableOpacity>
-        {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
-      </View>
-    );
-  };
+          <Ionicons name="chevron-down" size={20} color="#777" />
+        </View>
+      </TouchableOpacity>
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeContainer}>
       <StatusBar barStyle="light-content" backgroundColor="#0077b3" />
       
-      {/* Simple header with back button */}
+      {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -196,36 +254,75 @@ const ProductListingScreen = () => {
       </View>
       
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {/* Product Images */}
+        {/* Product Images Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Product Image<Text style={styles.required}>*</Text>
+            Product Images<Text style={styles.required}>*</Text>
+          </Text>
+          <Text style={styles.sectionSubtitle}>
+            Upload up to 5 images of your item
           </Text>
           
-          <View style={styles.imageSection}>
-            {selectedImage ? (
-              <View style={styles.imageWrapper}>
-                <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScrollView}>
+            {/* Image previews */}
+            {images.map((image, index) => (
+              <View key={index} style={styles.imageWrapper}>
+                <Image source={{ uri: image }} style={styles.imagePreview} />
                 <TouchableOpacity 
                   style={styles.removeImageButton}
-                  onPress={() => setSelectedImage(null)}
+                  onPress={() => removeImage(index)}
                 >
                   <Ionicons name="close-circle" size={24} color="#ff3b30" />
                 </TouchableOpacity>
               </View>
-            ) : (
+            ))}
+            
+            {/* Add image button (if less than 5 images) */}
+            {images.length < 5 && (
               <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
                 <Ionicons name="camera-outline" size={36} color="#0077b3" />
                 <Text style={styles.addImageText}>Add Photo</Text>
               </TouchableOpacity>
             )}
-          </View>
+          </ScrollView>
           
-          {errors.image && <Text style={styles.errorText}>{errors.image}</Text>}
+          {errors.images && <Text style={styles.errorText}>{errors.images}</Text>}
           
-          <Text style={styles.noteText}>
-            Note: In the real app, you'll be able to upload your own images.
+          <Text style={styles.imageCountText}>
+            {images.length}/5 images
           </Text>
+        </View>
+        
+        {/* Category, Condition, and Color (positioned at top) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Classification</Text>
+          
+          {/* Category dropdown */}
+          <Dropdown
+            label="Category"
+            value={form.category}
+            onPress={() => setShowCategoryModal(true)}
+            required={true}
+            error={errors.category}
+          />
+          
+          {/* Condition dropdown */}
+          <Dropdown
+            label="Condition"
+            value={form.condition}
+            onPress={() => setShowConditionModal(true)}
+            required={true}
+            error={errors.condition}
+          />
+          
+          {/* Color dropdown */}
+          <Dropdown
+            label="Color"
+            value={form.color}
+            onPress={() => setShowColorModal(true)}
+            required={true}
+            error={errors.color}
+          />
         </View>
         
         {/* Basic Info */}
@@ -288,39 +385,29 @@ const ProductListingScreen = () => {
             />
             {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
           </View>
-
-          {renderDropdown('Category', categories, form.category, 'category', errors.category)}
-          
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Brand</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. H&M, Zara, Nike"
-              placeholderTextColor="#aaaaaa"
-              value={form.brand}
-              onChangeText={(text) => handleChange('brand', text)}
-            />
-          </View>
         </View>
         
         {/* Product Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Product Details</Text>
           
-          {renderDropdown('Size', sizes, form.size, 'size', errors.size)}
+          {/* Size dropdown */}
+          <Dropdown
+            label={form.category === 'Footwear' ? 'Shoe Size' : 'Size'}
+            value={form.size}
+            onPress={() => setShowSizeModal(true)}
+            required={true}
+            error={errors.size}
+          />
           
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Color</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Blue, Red, Multicolor"
-              placeholderTextColor="#aaaaaa"
-              value={form.color}
-              onChangeText={(text) => handleChange('color', text)}
-            />
-          </View>
-          
-          {renderDropdown('Condition', conditions, form.condition, 'condition', errors.condition)}
+          {/* Gender dropdown */}
+          <Dropdown
+            label="Gender"
+            value={form.gender}
+            onPress={() => setShowGenderModal(true)}
+            required={false}
+            error={errors.gender}
+          />
         </View>
         
         {/* Submit Button */}
@@ -339,6 +426,208 @@ const ProductListingScreen = () => {
           )}
         </TouchableOpacity>
       </ScrollView>
+      
+      {/* Modal for Category dropdown */}
+      <Modal
+        visible={showCategoryModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Category</Text>
+              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={categories}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    handleChange('category', item);
+                    setShowCategoryModal(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {form.category === item && (
+                    <Ionicons name="checkmark" size={22} color="#0077b3" />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Modal for Condition dropdown */}
+      <Modal
+        visible={showConditionModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowConditionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Condition</Text>
+              <TouchableOpacity onPress={() => setShowConditionModal(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={conditions}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    handleChange('condition', item);
+                    setShowConditionModal(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {form.condition === item && (
+                    <Ionicons name="checkmark" size={22} color="#0077b3" />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Modal for Color dropdown */}
+      <Modal
+        visible={showColorModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowColorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Color</Text>
+              <TouchableOpacity onPress={() => setShowColorModal(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={colors}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    handleChange('color', item);
+                    setShowColorModal(false);
+                  }}
+                >
+                  <View style={styles.colorItemContainer}>
+                    <View 
+                      style={[
+                        styles.colorSwatch, 
+                        { backgroundColor: item.toLowerCase() === 'multicolor' 
+                          ? 'transparent' 
+                          : item.toLowerCase() }
+                      ]}
+                    >
+                      {item.toLowerCase() === 'multicolor' && (
+                        <View style={styles.multicolorSwatch} />
+                      )}
+                    </View>
+                    <Text style={styles.modalItemText}>{item}</Text>
+                  </View>
+                  
+                  {form.color === item && (
+                    <Ionicons name="checkmark" size={22} color="#0077b3" />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Modal for Size dropdown */}
+      <Modal
+        visible={showSizeModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSizeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {form.category === 'Footwear' ? 'Select Shoe Size' : 'Select Size'}
+              </Text>
+              <TouchableOpacity onPress={() => setShowSizeModal(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={getSizeOptions()}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    handleChange('size', item);
+                    setShowSizeModal(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {form.size === item && (
+                    <Ionicons name="checkmark" size={22} color="#0077b3" />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Modal for Gender dropdown */}
+      <Modal
+        visible={showGenderModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowGenderModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Gender</Text>
+              <TouchableOpacity onPress={() => setShowGenderModal(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={genders}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    handleChange('gender', item);
+                    setShowGenderModal(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item}</Text>
+                  {form.gender === item && (
+                    <Ionicons name="checkmark" size={22} color="#0077b3" />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -392,51 +681,61 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     color: '#333',
   },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
+  },
   required: {
     color: '#ff3b30',
   },
-  imageSection: {
+  imageScrollView: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 15,
+    marginVertical: 10,
   },
   imageWrapper: {
     position: 'relative',
+    marginRight: 10,
   },
   imagePreview: {
-    width: 200,
-    height: 200,
+    width: 100,
+    height: 100,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
   },
   removeImageButton: {
     position: 'absolute',
-    top: -10,
-    right: -10,
+    top: -8,
+    right: -8,
     backgroundColor: 'white',
     borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addImageButton: {
-    width: 200,
-    height: 200,
+    width: 100,
+    height: 100,
     borderRadius: 8,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: '#0077b3',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 10,
   },
   addImageText: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#0077b3',
-    marginTop: 8,
+    marginTop: 5,
   },
-  noteText: {
+  imageCountText: {
     fontSize: 12,
     color: '#666',
-    fontStyle: 'italic',
-    textAlign: 'center',
+    marginTop: 5,
+    textAlign: 'right',
   },
   inputContainer: {
     marginBottom: 15,
@@ -454,6 +753,11 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+  },
+  dropdownContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   inputText: {
     fontSize: 16,
@@ -495,6 +799,73 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  // Color swatch styles
+  colorItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  colorSwatch: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    overflow: 'hidden',
+  },
+  multicolorSwatch: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    borderWidth: 0,
+    // Create a multicolor gradient effect
+    borderTopLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderStyle: 'solid',
+    borderTopColor: 'red',
+    borderRightColor: 'blue',
+    borderBottomColor: 'green',
+    borderLeftColor: 'yellow',
+    borderWidth: 6,
   },
 });
 
