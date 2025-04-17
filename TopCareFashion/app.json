@@ -33,10 +33,17 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to let you upload a profile picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     }
+    
   }
 }
