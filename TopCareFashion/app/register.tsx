@@ -176,6 +176,7 @@ export default function Register() {
               <TextInput 
                 style={[styles.input, usernameError ? styles.inputError : null]} 
                 placeholder="Enter a username"
+                placeholderTextColor="#999"
                 value={username}
                 onChangeText={setUsername}
               />
@@ -188,6 +189,7 @@ export default function Register() {
               <TextInput 
                 style={[styles.input, emailError ? styles.inputError : null]} 
                 placeholder="Enter your email"
+                placeholderTextColor="#999"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -203,6 +205,7 @@ export default function Register() {
                 <TextInput 
                   style={styles.passwordInput} 
                   placeholder="Enter your password"
+                  placeholderTextColor="#999"
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}

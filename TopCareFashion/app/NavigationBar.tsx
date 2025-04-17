@@ -1,32 +1,51 @@
-// components/NavigationBar.tsx
-import React, { useState, useCallback } from "react";
+// NavigationBar.tsx - Updated with gender filter
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Platform,
   TextInput,
-  Platform
+  Modal,
+  ScrollView
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "./context/AuthContext";
+import * as Font from 'expo-font';
 
 // Define the prop types for the component
 interface NavigationBarProps {
-  activeTab?: string;  // Current active tab
-  showBackButton?: boolean;  // Whether to show back button instead of menu
-  onBackPress?: () => void;  // Custom back action if needed
-  showAddButton?: boolean;   // Whether to show the add product button
+  activeTab?: string;
+  showBackButton?: boolean;
+  onBackPress?: () => void;
+  showAddButton?: boolean;
 }
+
+// FILTER_OPTIONS
+export const FILTER_OPTIONS = {
+  CATEGORIES: ["Tops", "Bottoms", "Outerwear", "Footwear", "Dresses"],
+  SIZES: ["XS", "S", "M", "L", "XL", "XXL", "One Size"],
+  CONDITIONS: ["New with tags", "Like new", "Excellent", "Good", "Fair", "Poor"],
+  PRICE_RANGES: [
+    { id: "p1", label: "Under $25", min: 0, max: 25 },
+    { id: "p2", label: "$25-$50", min: 25, max: 50 },
+    { id: "p3", label: "$50-$100", min: 50, max: 100 },
+    { id: "p4", label: "$100-$200", min: 100, max: 200 },
+    { id: "p5", label: "Over $200", min: 200, max: null }
+  ],
+  GENDERS: ["Men", "Women", "Unisex"]
+};
 
 // Helper for type-safe navigation
 const useAppNavigation = () => {
   const router = useRouter();
 
   return {
-    goToHome: () => router.push("/"),
+    goToHome: () => router.push("/Homepage"),
+    goToIndex: () => router.push("/"),
     goToAboutUs: () => router.push("/aboutUs"),
     goToFaq: () => router.push("/faq"),
     goToLogin: () => router.push("/Login" as any),
@@ -34,6 +53,7 @@ const useAppNavigation = () => {
     goToWishlist: () => router.push("/Wishlist" as any),
     goToCart: () => router.push("/Cart" as any),
     goToProfile: () => router.push("/profile" as any),
+    goToCategory: (category: string) => router.push(`/${category.toLowerCase()}` as any),
   };
 };
 
@@ -41,35 +61,45 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   activeTab = "",
   showBackButton = false,
   onBackPress,
-  showAddButton = false,
+  showAddButton = false
 }) => {
   const router = useRouter();
   const navigate = useAppNavigation();
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
+  const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
+  
+  // Load custom fonts
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          'BonnieCondensedBlackItalic': require('../assets/fonts/BonnieCondensedBlackItalic.ttf'),
+        });
+        setFontsLoaded(true);
+      } catch (error) {
+        console.error('Error loading fonts:', error);
+        // If font loading fails, continue without custom font
+        setFontsLoaded(true);
+      }
+    }
+
+    loadFonts();
+  }, []);
 
   // Use the auth context to get authentication state
   const { isAuthenticated } = useAuth();
 
-  // State for search functionality
-  const [isSearchActive, setIsSearchActive] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isFilterVisible, setIsFilterVisible] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
-  // Category options for filtering
-  const filterCategories = ["Tops", "Bottoms", "Outerwear", "Dresses"];
-
   // Navigation categories
   const categories = ["TOP", "BOTTOM", "FOOTWEAR", "ABOUT US", "FAQ"];
 
-  // Function to clear search and close search bar
-  const closeSearch = useCallback(() => {
-    setSearchQuery("");
-    setIsSearchActive(false);
-    setIsFilterVisible(false);
-  }, []);
-
   // Toggle category selection
-  const toggleCategory = useCallback((category: string) => {
+  const toggleCategory = (category) => {
     setSelectedCategories(prev => {
       if (prev.includes(category)) {
         return prev.filter(item => item !== category);
@@ -77,36 +107,131 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         return [...prev, category];
       }
     });
-  }, []);
-
-  // Handle navigation
-  const handleNavigation = (item: string) => {
-    if (item === activeTab) return; // Do nothing if already on this tab
-
-    switch (item) {
-      case "TOP":
-      case "BOTTOM":
-      case "FOOTWEAR":
-        navigate.goToHome();
-        break;
-      case "ABOUT US":
-        navigate.goToAboutUs();
-        break;
-      case "FAQ":
-        navigate.goToFaq();
-        break;
-      default:
-        break;
-    }
   };
+
+  // Toggle size selection
+  const toggleSize = (size) => {
+    setSelectedSizes(prev => {
+      if (prev.includes(size)) {
+        return prev.filter(item => item !== size);
+      } else {
+        return [...prev, size];
+      }
+    });
+  };
+
+  // Toggle condition selection
+  const toggleCondition = (condition) => {
+    setSelectedConditions(prev => {
+      if (prev.includes(condition)) {
+        return prev.filter(item => item !== condition);
+      } else {
+        return [...prev, condition];
+      }
+    });
+  };
+
+  // Toggle price range selection
+  const togglePriceRange = (priceRangeId) => {
+    setSelectedPriceRanges(prev => {
+      if (prev.includes(priceRangeId)) {
+        return prev.filter(id => id !== priceRangeId);
+      } else {
+        return [...prev, priceRangeId];
+      }
+    });
+  };
+
+  // Toggle gender selection
+  const toggleGender = (gender) => {
+    setSelectedGenders(prev => {
+      if (prev.includes(gender)) {
+        return prev.filter(item => item !== gender);
+      } else {
+        return [...prev, gender];
+      }
+    });
+  };
+
+  // Get selected price range objects
+  const getSelectedPriceRanges = () => {
+    if (selectedPriceRanges.length === 0) return [];
+    return FILTER_OPTIONS.PRICE_RANGES.filter(range => selectedPriceRanges.includes(range.id));
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedCategories([]);
+    setSelectedSizes([]);
+    setSelectedConditions([]);
+    setSelectedPriceRanges([]);
+    setSelectedGenders([]);
+  };
+
+  // Handle search submission
+  const handleSearch = () => {
+    console.log("Executing search:", {
+      query: searchQuery,
+      categories: selectedCategories,
+      sizes: selectedSizes,
+      conditions: selectedConditions,
+      priceRanges: getSelectedPriceRanges(),
+      genders: selectedGenders
+    });
+
+    // Hide search UI
+    setShowSearch(false);
+
+    // Navigate to search results page with parameters
+    const priceRanges = getSelectedPriceRanges();
+    const params = [];
+
+    if (searchQuery) params.push(`query=${encodeURIComponent(searchQuery)}`);
+    if (selectedCategories.length > 0) params.push(`categories=${selectedCategories.join(',')}`);
+    if (selectedSizes.length > 0) params.push(`sizes=${selectedSizes.join(',')}`);
+    if (selectedConditions.length > 0) params.push(`conditions=${selectedConditions.join(',')}`);
+    if (selectedGenders.length > 0) params.push(`genders=${selectedGenders.join(',')}`);
+
+    if (priceRanges.length > 0) {
+      params.push(`priceRangeIds=${priceRanges.map(range => range.id).join(',')}`);
+    }
+
+    const queryString = params.join('&');
+    router.push(`/search?${queryString}`);
+  };
+
+// Handle navigation
+const handleNavigation = (item: string) => {
+  if (item === activeTab) return; // Do nothing if already on this tab
+
+  switch (item) {
+    case "TOP":
+      router.push("/Tops");
+      break;
+    case "BOTTOM":
+      router.push("/Bottom");
+      break;
+    case "FOOTWEAR":
+      router.push("/Footwear");
+      break;
+    case "ABOUT US":
+      navigate.goToAboutUs();
+      break;
+    case "FAQ":
+      navigate.goToFaq();
+      break;
+    default:
+      break;
+  }
+};
 
   // Function to handle logo press
   const handleLogoPress = () => {
     // Navigate to Homepage if logged in, otherwise to index
     if (isAuthenticated) {
-      router.push("/Homepage");
+      navigate.goToHome();
     } else {
-      router.push("/");
+      navigate.goToIndex();
     }
   };
 
@@ -119,133 +244,62 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     }
   };
 
-
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#0077b3" />
 
       {/* Header */}
       <View style={styles.header}>
-        {isSearchActive ? (
-          // Render Search Bar in Header with close button
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={[
-                styles.searchInput,
-                isFilterVisible ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 } : null
-              ]}
-              placeholder="Search products..."
-              value={searchQuery}
-              onChangeText={(text) => setSearchQuery(text)}
-              autoFocus={true}
-              placeholderTextColor="#999"
-            />
+        <View style={styles.leftIcons}>
+          {showBackButton ? (
+            <TouchableOpacity onPress={handleBackPress}>
+              <Ionicons name="arrow-back" size={28} color="white" />
+            </TouchableOpacity>
+          ) : (
             <TouchableOpacity
-              style={styles.searchCloseButton}
-              onPress={closeSearch}
+              onPress={() => setShowSearch(true)}
             >
-              <Ionicons name="close-circle" size={24} color="#666" />
+              <Ionicons name="search-outline" size={28} color="white" />
             </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Make the logo clickable */}
+        <TouchableOpacity onPress={handleLogoPress}>
+          <Text style={[styles.logo, fontsLoaded && { fontFamily: 'BonnieCondensedBlackItalic' }]}>
+            TOP CARE FASHION
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.headerIcons}>
+          {showAddButton && isAuthenticated && (
             <TouchableOpacity
-              style={styles.filterButton}
-              onPress={() => setIsFilterVisible(prev => !prev)}
+              style={styles.addButton}
+              onPress={() => router.push('/ProductListing')}
             >
-              <Ionicons name="options-outline" size={22} color="#666" />
+              <Ionicons name="add-circle-outline" size={22} color="white" style={styles.addIcon} />
+              <Text style={styles.addButtonText}>List</Text>
             </TouchableOpacity>
+          )}
 
-            {/* Filter dropdown */}
-            {isFilterVisible && (
-              <View style={styles.filterDropdown}>
-                <Text style={styles.filterTitle}>Filter by category:</Text>
-                <View style={styles.categoryContainer}>
-                  {filterCategories.map((category, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.categoryChip,
-                        selectedCategories.includes(category) && styles.categoryChipSelected
-                      ]}
-                      onPress={() => toggleCategory(category)}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryText,
-                          selectedCategories.includes(category) && styles.categoryTextSelected
-                        ]}
-                      >
-                        {category}
-                      </Text>
-                      {selectedCategories.includes(category) && (
-                        <Ionicons name="checkmark" size={14} color="white" style={styles.checkIcon} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.filterActions}>
-                  <TouchableOpacity
-                    style={styles.filterActionButton}
-                    onPress={() => setSelectedCategories([])}
-                  >
-                    <Text style={styles.filterActionButtonText}>Clear All</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.filterActionButton, styles.applyButton]}
-                    onPress={() => setIsFilterVisible(false)}
-                  >
-                    <Text style={styles.applyButtonText}>Apply Filters</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </View>
-        ) : (
-          // Render Header Title and Icons
-          <>
-            <View style={styles.leftIcons}>
-              {showBackButton ? (
-                <TouchableOpacity onPress={handleBackPress}>
-                  <Ionicons name="arrow-back" size={28} color="white" />
-                </TouchableOpacity>
-              ) : (
-                <Ionicons name="menu" size={28} color="white" />
-              )}
+          <TouchableOpacity
+            onPress={() => isAuthenticated ? navigate.goToWishlist() : navigate.goToRegister()}
+          >
+            <Ionicons name="heart-outline" size={28} color="white" style={{ marginRight: 15 }} />
+          </TouchableOpacity>
 
-              {!showBackButton && (
-                <TouchableOpacity
-                  onPress={() => setIsSearchActive(true)}
-                  style={{ marginLeft: 15 }}
-                >
-                  <Ionicons name="search-outline" size={28} color="white" />
-                </TouchableOpacity>
-              )}
-            </View>
+          <TouchableOpacity
+            onPress={() => isAuthenticated ? navigate.goToCart() : navigate.goToRegister()}
+          >
+            <Ionicons name="cart-outline" size={28} color="white" />
+          </TouchableOpacity>
 
-            {/* Make the logo clickable */}
-            <TouchableOpacity onPress={handleLogoPress}>
-              <Text style={styles.logo}>TOP CARE FASHION</Text>
-            </TouchableOpacity>
-
-            <View style={styles.headerIcons}>
-              <TouchableOpacity
-                onPress={() => isAuthenticated ? navigate.goToWishlist() : navigate.goToRegister()}
-              >
-                <Ionicons name="heart-outline" size={28} color="white" style={{ marginRight: 15 }} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => isAuthenticated ? navigate.goToCart() : navigate.goToRegister()}
-              >
-                <Ionicons name="cart-outline" size={28} color="white" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => isAuthenticated ? navigate.goToProfile() : navigate.goToLogin()}
-              >
-                <Ionicons name="person-circle-outline" size={28} color="white" style={{ marginLeft: 15 }} />
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+          <TouchableOpacity
+            onPress={() => isAuthenticated ? navigate.goToProfile() : navigate.goToLogin()}
+          >
+            <Ionicons name="person-circle-outline" size={28} color="white" style={{ marginLeft: 15 }} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Navigation Bar */}
@@ -268,12 +322,214 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Search Modal */}
+      <Modal
+        visible={showSearch}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSearch(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Search Products</Text>
+              <TouchableOpacity onPress={() => setShowSearch(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              <View style={styles.searchInputContainer}>
+                <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoFocus={true}
+                  returnKeyType="search"
+                  onSubmitEditing={handleSearch}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.clearButton}
+                    onPress={() => setSearchQuery('')}
+                  >
+                    <Ionicons name="close-circle" size={18} color="#999" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Gender Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Gender</Text>
+                <View style={styles.filterChips}>
+                  {FILTER_OPTIONS.GENDERS.map((gender, index) => (
+                    <TouchableOpacity
+                      key={`gender-${index}`}
+                      style={[
+                        styles.filterChip,
+                        selectedGenders.includes(gender) && styles.filterChipSelected
+                      ]}
+                      onPress={() => toggleGender(gender)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          selectedGenders.includes(gender) && styles.filterChipTextSelected
+                        ]}
+                      >
+                        {gender}
+                      </Text>
+                      {selectedGenders.includes(gender) && (
+                        <Ionicons name="checkmark" size={14} color="white" style={styles.checkIcon} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Category Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Categories</Text>
+                <View style={styles.filterChips}>
+                  {FILTER_OPTIONS.CATEGORIES.map((category, index) => (
+                    <TouchableOpacity
+                      key={`cat-${index}`}
+                      style={[
+                        styles.filterChip,
+                        selectedCategories.includes(category) && styles.filterChipSelected
+                      ]}
+                      onPress={() => toggleCategory(category)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          selectedCategories.includes(category) && styles.filterChipTextSelected
+                        ]}
+                      >
+                        {category}
+                      </Text>
+                      {selectedCategories.includes(category) && (
+                        <Ionicons name="checkmark" size={14} color="white" style={styles.checkIcon} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Size Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Sizes</Text>
+                <View style={styles.filterChips}>
+                  {FILTER_OPTIONS.SIZES.map((size, index) => (
+                    <TouchableOpacity
+                      key={`size-${index}`}
+                      style={[
+                        styles.filterChip,
+                        selectedSizes.includes(size) && styles.filterChipSelected
+                      ]}
+                      onPress={() => toggleSize(size)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          selectedSizes.includes(size) && styles.filterChipTextSelected
+                        ]}
+                      >
+                        {size}
+                      </Text>
+                      {selectedSizes.includes(size) && (
+                        <Ionicons name="checkmark" size={14} color="white" style={styles.checkIcon} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Price Range Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Price Range</Text>
+                <View style={styles.filterChips}>
+                  {FILTER_OPTIONS.PRICE_RANGES.map((price) => (
+                    <TouchableOpacity
+                      key={`price-${price.id}`}
+                      style={[
+                        styles.filterChip,
+                        selectedPriceRanges.includes(price.id) && styles.filterChipSelected
+                      ]}
+                      onPress={() => togglePriceRange(price.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          selectedPriceRanges.includes(price.id) && styles.filterChipTextSelected
+                        ]}
+                      >
+                        {price.label}
+                      </Text>
+                      {selectedPriceRanges.includes(price.id) && (
+                        <Ionicons name="checkmark" size={14} color="white" style={styles.checkIcon} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Condition Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Condition</Text>
+                <View style={styles.filterChips}>
+                  {FILTER_OPTIONS.CONDITIONS.map((condition, index) => (
+                    <TouchableOpacity
+                      key={`cond-${index}`}
+                      style={[
+                        styles.filterChip,
+                        selectedConditions.includes(condition) && styles.filterChipSelected
+                      ]}
+                      onPress={() => toggleCondition(condition)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          selectedConditions.includes(condition) && styles.filterChipTextSelected
+                        ]}
+                      >
+                        {condition}
+                      </Text>
+                      {selectedConditions.includes(condition) && (
+                        <Ionicons name="checkmark" size={14} color="white" style={styles.checkIcon} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.clearFiltersButton}
+                onPress={clearAllFilters}
+              >
+                <Text style={styles.clearFiltersText}>Clear Filters</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleSearch}
+              >
+                <Text style={styles.searchButtonText}>Search</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -291,7 +547,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -305,10 +560,10 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   logo: {
-    fontSize: 24,
+    fontSize: 28, // Increased size for better display with custom font
     fontWeight: "bold",
-    fontFamily: "BonnieCondensedBlackItalic",
-    color: "white"
+    color: "white",
+    // Note: fontFamily will be conditionally applied when fonts are loaded
   },
   headerIcons: {
     flexDirection: "row",
@@ -338,109 +593,119 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "gray"
   },
-  // Search and filter styles
-  searchContainer: {
+  // Modal styles
+  modalOverlay: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    position: "relative",
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 500,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    maxHeight: '80%',
+  },
+  modalScrollView: {
+    paddingHorizontal: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    backgroundColor: '#f9f9f9',
+  },
+  searchIcon: {
     marginRight: 10,
-    zIndex: 1000,
   },
   searchInput: {
     flex: 1,
     height: 40,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingRight: 40, // Make room for the close icon
-    backgroundColor: "white",
     fontSize: 16,
   },
-  searchCloseButton: {
-    position: "absolute",
-    right: 8,
-    padding: 4,
+  clearButton: {
+    padding: 5,
   },
-  filterButton: {
-    position: "absolute",
-    right: 40, // Position before the close button
-    padding: 8,
-  },
-  filterDropdown: {
-    position: "absolute",
-    top: 40,
-    left: 0,
-    right: 0,
-    backgroundColor: "white",
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: "#ccc",
-    padding: 12,
-    zIndex: 1001,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+  filterSection: {
+    marginBottom: 15,
   },
   filterTitle: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '600',
     marginBottom: 10,
-    color: "#333",
+    color: '#333',
   },
-  categoryContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 12,
+  filterChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    margin: 4,
+    paddingVertical: 8,
+    margin: 5,
   },
-  categoryChipSelected: {
-    backgroundColor: "#0077b3",
+  filterChipSelected: {
+    backgroundColor: '#0077b3',
   },
-  categoryText: {
+  filterChipText: {
     fontSize: 14,
-    color: "#333",
+    color: '#333',
   },
-  categoryTextSelected: {
-    color: "white",
+  filterChipTextSelected: {
+    color: 'white',
   },
   checkIcon: {
-    marginLeft: 4,
+    marginLeft: 5,
   },
-  filterActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
-  filterActionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    backgroundColor: "#f0f0f0",
+  clearFiltersButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  applyButton: {
-    backgroundColor: "#0077b3",
+  clearFiltersText: {
+    color: '#666',
   },
-  filterActionButtonText: {
-    color: "#333",
-    fontWeight: "500",
+  searchButton: {
+    backgroundColor: '#0077b3',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
   },
-  applyButtonText: {
-    color: "white",
-    fontWeight: "500",
+  searchButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    fontSize: 16,
   },
 });
 
