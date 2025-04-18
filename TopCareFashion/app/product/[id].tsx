@@ -105,11 +105,14 @@ export default function ProductDetails() {
     // Navigate to Mix n Match screen
     // router.push(`/mixnmatch?productId=${product.id}`);
   };
-
   // Handle navigate to seller profile
   const handleSellerProfile = (sellerName) => {
-    router.push(`/seller/${sellerName}`);
+    router.push({
+      pathname: '/SellerPage',
+      params: { seller: sellerName }
+    });
   };
+
 
   // If product is not loaded yet, show a simple loading state
   if (loading || !product) {

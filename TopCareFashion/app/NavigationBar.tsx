@@ -52,11 +52,9 @@ const useAppNavigation = () => {
     goToRegister: () => router.push("/register" as any),
     goToWishlist: () => router.push("/Wishlist" as any),
     goToCart: () => router.push("/Cart" as any),
-<<<<<<< HEAD
     goToProfile: () => router.push("/profile" as any),
     goToCategory: (category: string) => router.push(`/${category.toLowerCase()}` as any),
     goToProfile: () => router.push("/Profile" as any),
->>>>>>> b3c690b (Add personalized dashboard and update account details)
   };
 };
 
