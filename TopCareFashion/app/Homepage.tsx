@@ -1,4 +1,3 @@
-// app/homepage.tsx
 import React, { useState, useCallback, useRef } from 'react';
 import { 
   View, 
@@ -18,7 +17,7 @@ import NavigationBar from './NavigationBar';
 import { useAuth } from './context/AuthContext';
 import { useRouter } from 'expo-router';
 import PlatformStatistics from './PlatformStatistics';
-import TopRatedSellers from './TopRatedSellers';
+import { mockProducts } from './data/mockData';
 
 const HomepageScreen = () => {
   const { isAuthenticated, user } = useAuth();
@@ -26,6 +25,95 @@ const HomepageScreen = () => {
   const scrollViewRef = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Get recently added items from mockProducts
+  const getRecentlyAddedItems = () => {
+    // Make a copy of mockProducts to avoid modifying the original
+    const products = [...mockProducts];
+    
+    // Check what date field is available (datePosted, dateAdded, createdAt, etc.)
+    const firstProduct = products[0] || {};
+    const dateField = Object.keys(firstProduct).find(key => 
+      key.toLowerCase().includes('date') || key === 'createdAt' || key === 'timestamp'
+    ) || 'datePosted';
+    
+    console.log("Using date field for sorting:", dateField);
+    
+    // Sort products by date in descending order (newest first)
+    const sortedProducts = products.sort((a, b) => {
+      // Safely create date objects with fallbacks
+      let dateA, dateB;
+      
+      try {
+        dateA = a[dateField] ? new Date(a[dateField]) : new Date(0);
+        dateB = b[dateField] ? new Date(b[dateField]) : new Date(0);
+        
+        // Handle invalid dates
+        if (isNaN(dateA.getTime())) dateA = new Date(0);
+        if (isNaN(dateB.getTime())) dateB = new Date(0);
+      } catch (e) {
+        console.error("Error parsing dates:", e);
+        return 0; // Keep original order on error
+      }
+      
+      return dateB.getTime() - dateA.getTime(); // Most recent first
+    });
+    
+    console.log("First 2 products after sorting:", 
+      sortedProducts.slice(0, 2).map(p => ({
+        name: p.name, 
+        date: p[dateField]
+      }))
+    );
+    
+    // Take the top 5 most recent products
+    return sortedProducts.slice(0, 5).map(product => ({
+      id: product.id,
+      name: product.name,
+      image: product.image,
+      price: typeof product.price === 'number' ? product.price.toFixed(2) : product.price,
+      size: product.size,
+      condition: product.condition,
+      seller: product.seller,
+      // Add isNew flag to products posted within the last 3 days
+      isNew: (() => {
+        try {
+          const productDate = new Date(product[dateField]);
+          if (isNaN(productDate.getTime())) return false;
+          return (new Date() - productDate) / (1000 * 60 * 60 * 24) < 3;
+        } catch (e) {
+          return false;
+        }
+      })()
+    }));
+  };
+  
+  // Get deals items (products with discounts)
+  const getDealsItems = () => {
+    // Filter products where we can simulate a discount (e.g., based on condition)
+    // For demo purposes, let's just take some products and add discount info
+    return mockProducts.slice(0, 5).map(product => {
+      // Calculate a random discount between 20-50%
+      const discountPercentage = Math.floor(Math.random() * 31) + 20;
+      const originalPrice = product.price;
+      const discountedPrice = (originalPrice * (100 - discountPercentage) / 100).toFixed(2);
+      
+      return {
+        id: product.id,
+        name: product.name,
+        image: product.image,
+        originalPrice: typeof originalPrice === 'number' ? originalPrice.toFixed(2) : originalPrice,
+        discountedPrice,
+        discountPercentage: `-${discountPercentage}%`,
+        condition: product.condition,
+        seller: product.seller
+      };
+    });
+  };
+  
+  // Get recently added items and deals items
+  const recentItems = getRecentlyAddedItems();
+  const dealsItems = getDealsItems();
   
   // Product listing handler
   const handleAddProduct = () => {
@@ -93,7 +181,7 @@ const HomepageScreen = () => {
           >
             {/* Welcome Banner for logged in users */}
             <View style={styles.welcomeBanner}>
-              <Text style={styles.welcomeTitle}>Welcome back, {user?.name || 'Fashionista'}!</Text>
+              <Text style={styles.welcomeTitle}>Welcome back, {user?.name || user?.username || 'there'}!</Text>
               <Text style={styles.welcomeSubtitle}>Discover pre-loved fashion just for you</Text>
             </View>
             
@@ -140,9 +228,6 @@ const HomepageScreen = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalListContent}
             />
-
-            {/* Top Rated Sellers Section */}
-            <TopRatedSellers />
 
             {/* Trending Deals Section */}
             <View style={styles.dealsBanner}>
@@ -230,114 +315,6 @@ const HomepageScreen = () => {
     </GestureHandlerRootView>
   );
 };
-
-// Sample recently added items
-const recentItems = [
-  { 
-    id: "1", 
-    name: "Checkered H&M Shirt", 
-    image: "https://pfst.cf2.poecdn.net/base/image/84623588901ca1f12d5bbc2fc3426defa41a363b407e7607e5802d472e795d77?w=800&h=800",
-    price: "38.99",
-    size: "M",
-    condition: "Excellent",
-    seller: "fashionista22",
-    isNew: true
-  },
-  { 
-    id: "2", 
-    name: "Converse Men Shoes", 
-    image: "https://i.ebayimg.com/images/g/-YAAAOSwzxlmIVmK/s-l1200.jpg",
-    price: "52.00",
-    size: "44",
-    condition: "Good",
-    seller: "rocky_sir",
-    isNew: true
-  },
-  { 
-    id: "3", 
-    name: "Coen Denim Skirt", 
-    image: "https://down-sg.img.susercontent.com/file/th-11134207-7rasf-m0nu7s4wjemwe1",
-    price: "12.40",
-    size: "M",
-    condition: "Good",
-    seller: "cat_lover2",
-    isNew: false
-  },
-  { 
-    id: "4", 
-    name: "Stanley Heels", 
-    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTeAWxrsOtObaGWs0IAuFY49lSBdAclkPxv8w&s",
-    price: "45.30",
-    size: "38",
-    condition: "Good",
-    seller: "rich_girl32",
-    isNew: true
-  },
-  { 
-    id: "5", 
-    name: "Green Henley Top", 
-    image: "https://pfst.cf2.poecdn.net/base/image/93705a0a2a2f14c22014694ae166328ee323c83d428b2eb493c5cb3de201ac98?w=768&h=768",
-    price: "22.20",
-    size: "M",
-    condition: "Excellent",
-    seller: "eco_closet",
-    isNew: false
-  },
-];
-
-// Sample deals data
-const dealsItems = [
-  { 
-    id: "d1", 
-    name: "Black Safety Boots", 
-    image: "https://pfst.cf2.poecdn.net/base/image/b7df18a7d27dbd3c5758ed5f96aa5482f1839dc7818c3b95efbd1138f2e58755?w=225&h=225", 
-    originalPrice: "47.04", 
-    discountedPrice: "34.18", 
-    discountPercentage: "-36%",
-    condition: "Good",
-    seller: "workwear_pro"
-  },
-  { 
-    id: "d2", 
-    name: "Green Henley Top", 
-    image: "https://pfst.cf2.poecdn.net/base/image/93705a0a2a2f14c22014694ae166328ee323c83d428b2eb493c5cb3de201ac98?w=768&h=768", 
-    originalPrice: "22.20", 
-    discountedPrice: "16.10", 
-    discountPercentage: "-50%",
-    condition: "Excellent",
-    seller: "eco_closet"
-  },
-  { 
-    id: "d3", 
-    name: "Patchwork Shirt", 
-    image: "https://pfst.cf2.poecdn.net/base/image/7488cb6de00f7424a2d16af0dd0c5c471385a0cf5f1c5719e5588c0b3a2e7028?w=800&h=800", 
-    originalPrice: "30.10", 
-    discountedPrice: "21.54", 
-    discountPercentage: "-30%",
-    condition: "Good",
-    seller: "urban_threads"
-  },
-  { 
-    id: "d4", 
-    name: "Checkered Shirt", 
-    image: "https://pfst.cf2.poecdn.net/base/image/84623588901ca1f12d5bbc2fc3426defa41a363b407e7607e5802d472e795d77?w=800&h=800", 
-    originalPrice: "38.99", 
-    discountedPrice: "29.99", 
-    discountPercentage: "-23%",
-    condition: "Like New",
-    seller: "fashionista22"
-  },
-  { 
-    id: "d5", 
-    name: "Varsity Jacket", 
-    image: "https://pfst.cf2.poecdn.net/base/image/b166b1155fd21a4896628b92585029159f19f420888ca257b50436d1f24a15e5?w=1200&h=1600", 
-    originalPrice: "89.90", 
-    discountedPrice: "65.00", 
-    discountPercentage: "-28%",
-    condition: "Like New",
-    seller: "vintage_vibes"
-  },
-];
 
 const styles = StyleSheet.create({
   safeContainer: { 

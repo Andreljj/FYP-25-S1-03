@@ -1,5 +1,5 @@
 // app/search.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,323 +14,263 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import NavigationBar from './NavigationBar';
-import { FILTER_OPTIONS } from './NavigationBar'; // Import filter options from NavigationBar
-import { mockProducts } from './data/mockData'; // Import standardized data
+import { FILTER_OPTIONS } from './NavigationBar';
+import { mockProducts } from './data/mockData';
 
 export default function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  
+  // Single source of truth for filters
+  const [filters, setFilters] = useState({
+    query: '',
+    categories: [],
+    sizes: [],
+    conditions: [],
+    genders: [],
+    priceRanges: []
+  });
+  
+  // UI states
   const [loading, setLoading] = useState(true);
-  const [results, setResults] = useState(mockProducts);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
-  const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
-  const [priceRanges, setPriceRanges] = useState<Array<{
-    min: number | null;
-    max: number | null;
-    id: string;
-    label: string;
-  }>>([]);
-
-  // Ref to track if we're currently handling a URL change
-  const isHandlingUrlChange = useRef(false);
-  // Ref to track if filters have been applied at least once
-  const filtersApplied = useRef(false);
-
-  // Parse URL parameters and update state
+  const [results, setResults] = useState([]);
+  const [initialized, setInitialized] = useState(false);
+  
+  // Initialize from URL params - only once at component mount
   useEffect(() => {
-    console.log('URL parameters changed:', params);
-
-    // Skip if we're the ones who triggered the URL change
-    if (isHandlingUrlChange.current) {
-      isHandlingUrlChange.current = false;
-      return;
-    }
-
-    // Only set loading on first load or explicit search
-    if (!filtersApplied.current) {
-      setLoading(true);
-    }
-
-    // Extract query and filters from URL parameters
-    const query = params.query as string || '';
-    setSearchQuery(query);
-
-    if (params.categories) {
-      const categories = (params.categories as string).split(',');
-      setSelectedCategories(categories);
-    } else {
-      setSelectedCategories([]);
-    }
-
-    if (params.sizes) {
-      const sizes = (params.sizes as string).split(',');
-      setSelectedSizes(sizes);
-    } else {
-      setSelectedSizes([]);
-    }
-
-    if (params.conditions) {
-      const conditions = (params.conditions as string).split(',');
-      setSelectedConditions(conditions);
-    } else {
-      setSelectedConditions([]);
-    }
-
-    // Handle gender filters
-    if (params.genders) {
-      const genders = (params.genders as string).split(',');
-      setSelectedGenders(genders);
-    } else {
-      setSelectedGenders([]);
-    }
-
-    // Handle price ranges
-    const priceRangeIds = params.priceRangeIds ? (params.priceRangeIds as string).split(',') : [];
-    const newPriceRanges = [];
-
-    if (priceRangeIds.length > 0) {
-      for (const id of priceRangeIds) {
-        const foundRange = FILTER_OPTIONS.PRICE_RANGES.find(range => range.id === id);
-        if (foundRange) {
-          newPriceRanges.push({
-            min: foundRange.min,
-            max: foundRange.max,
-            id: foundRange.id,
-            label: foundRange.label
-          });
+    if (initialized) return;
+    
+    try {
+      // Extract query from URL parameters
+      const query = params.query ? String(params.query) : '';
+      
+      // Extract other filters from URL parameters
+      const categories = params.categories ? String(params.categories).split(',') : [];
+      const sizes = params.sizes ? String(params.sizes).split(',') : [];
+      const conditions = params.conditions ? String(params.conditions).split(',') : [];
+      const genders = params.genders ? String(params.genders).split(',') : [];
+      
+      // Extract price ranges
+      const priceRangeIds = params.priceRangeIds ? String(params.priceRangeIds).split(',') : [];
+      const priceRanges = [];
+      
+      if (FILTER_OPTIONS?.PRICE_RANGES && priceRangeIds.length > 0) {
+        for (const id of priceRangeIds) {
+          const foundRange = FILTER_OPTIONS.PRICE_RANGES.find(range => range.id === id);
+          if (foundRange) {
+            priceRanges.push(foundRange);
+          }
         }
       }
+      
+      // Set filters from URL params
+      setFilters({
+        query,
+        categories,
+        sizes,
+        conditions,
+        genders,
+        priceRanges
+      });
+      
+      setInitialized(true);
+    } catch (error) {
+      console.error('Error initializing from URL params:', error);
+      setInitialized(true);
     }
-
-    setPriceRanges(newPriceRanges);
-
-    // Mark filters as applied
-    filtersApplied.current = true;
-
-    // Delay clearing loading state for UX
-    setTimeout(() => {
-      setLoading(false);
-    }, 300);
   }, [params]);
-
-  // Effect to apply filtering when filter state changes
+  
+  // Filter products when filters change
   useEffect(() => {
-    if (!loading) {
-      applyFilters();
-    }
-  }, [searchQuery, selectedCategories, selectedSizes, selectedConditions, selectedGenders, priceRanges, loading]);
-
-  // Filter products function
-  const applyFilters = () => {
-    console.log("Applying filters with:", {
-      query: searchQuery,
-      categories: selectedCategories,
-      sizes: selectedSizes,
-      conditions: selectedConditions,
-      priceRanges: priceRanges.map(r => r.id),
-      genders: selectedGenders
-    });
-
-    const filtered = mockProducts.filter(product => {
-      // Filter by search query
-      const matchesQuery = !searchQuery ||
-        product.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Filter by categories
-      const matchesCategory = selectedCategories.length === 0 ||
-        selectedCategories.includes(product.category);
-
-      // Filter by sizes
-      const matchesSize = selectedSizes.length === 0 ||
-        selectedSizes.includes(product.size);
-
-      // Filter by conditions
-      const matchesCondition = selectedConditions.length === 0 ||
-        selectedConditions.includes(product.condition);
-
-      // Filter by gender
-      const matchesGender = selectedGenders.length === 0 ||
-        selectedGenders.includes(product.gender);
-
-      // Add debugging for gender matching
-      if (selectedGenders.length > 0 && !matchesGender) {
-        console.log(`Product ${product.id} (${product.name}) gender: ${product.gender} did not match selected genders:`, selectedGenders);
+    if (!initialized) return;
+    
+    console.log('Filtering products with:', filters);
+    setLoading(true);
+    
+    try {
+      // Safety check for mockProducts
+      if (!Array.isArray(mockProducts) || mockProducts.length === 0) {
+        setResults([]);
+        setLoading(false);
+        return;
       }
-
-      // Filter by price ranges
-      const matchesPriceRanges = priceRanges.length === 0 ||
-        priceRanges.some(range => {
-          const matchesMin = range.min === null || product.price >= range.min;
-          const matchesMax = range.max === null || product.price <= range.max;
-          return matchesMin && matchesMax;
-        });
-
-      return matchesQuery && matchesCategory && matchesSize &&
-        matchesCondition && matchesPriceRanges && matchesGender;
-    });
-
-    console.log(`Found ${filtered.length} products matching criteria`);
-    setResults(filtered);
-  };
-
-  // Navigate to search with updated parameters
-  const navigateWithUpdatedFilters = (updatedFilters) => {
-    // Mark that we're initiating a URL change
-    isHandlingUrlChange.current = true;
-
-    // Get the current query
-    const query = searchQuery;
-
-    // Construct new parameters
-    const params = [];
-
-    // Add query parameter if exists
-    if (query) params.push(`query=${encodeURIComponent(query)}`);
-
-    // Add categories parameter if any categories are selected
-    if (updatedFilters.categories?.length > 0) {
-      params.push(`categories=${updatedFilters.categories.join(',')}`);
+      
+      // Filter products
+      const filtered = mockProducts.filter(product => {
+        if (!product) return false;
+        
+        // Extract filter values
+        const { query, categories, sizes, conditions, genders, priceRanges } = filters;
+        
+        // Check query
+        const matchesQuery = !query || 
+          (product.name && product.name.toLowerCase().includes(query.toLowerCase()));
+        
+        // Check categories
+        const matchesCategory = categories.length === 0 || 
+          (product.category && categories.includes(product.category));
+        
+        // Check sizes
+        const matchesSize = sizes.length === 0 || 
+          (product.size && sizes.includes(product.size));
+        
+        // Check conditions
+        const matchesCondition = conditions.length === 0 || 
+          (product.condition && conditions.includes(product.condition));
+        
+        // Check gender
+        const matchesGender = genders.length === 0 || 
+          (product.gender && genders.includes(product.gender));
+        
+        // Check price ranges
+        const matchesPriceRanges = priceRanges.length === 0 || 
+          (typeof product.price === 'number' && priceRanges.some(range => {
+            const matchesMin = range.min === null || product.price >= range.min;
+            const matchesMax = range.max === null || product.price <= range.max;
+            return matchesMin && matchesMax;
+          }));
+        
+        // Combine all filters
+        return matchesQuery && matchesCategory && matchesSize && 
+          matchesCondition && matchesPriceRanges && matchesGender;
+      });
+      
+      setResults(filtered);
+    } catch (error) {
+      console.error('Error filtering products:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
     }
-
-    // Add sizes parameter if any sizes are selected
-    if (updatedFilters.sizes?.length > 0) {
-      params.push(`sizes=${updatedFilters.sizes.join(',')}`);
+  }, [filters, initialized]);
+  
+  // Safety timeout to exit loading state
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('Safety timeout: exiting loading state');
+        setLoading(false);
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
+  
+  // Initialize with all products if needed
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (results.length === 0 && !loading && initialized) {
+        console.log('No results, showing all products');
+        setResults(mockProducts || []);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [results, loading, initialized]);
+  
+  // Update filters and optionally update URL
+  const updateFilters = (newFilters, updateURL = true) => {
+    // Update state
+    setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
+    
+    // Update URL if needed
+    if (updateURL) {
+      const { query, categories, sizes, conditions, genders, priceRanges } = {
+        ...filters,
+        ...newFilters
+      };
+      
+      const urlParams = [];
+      
+      // Add query if exists
+      if (query) urlParams.push(`query=${encodeURIComponent(query)}`);
+      
+      // Add other filters if they exist
+      if (categories.length > 0) urlParams.push(`categories=${categories.join(',')}`);
+      if (sizes.length > 0) urlParams.push(`sizes=${sizes.join(',')}`);
+      if (conditions.length > 0) urlParams.push(`conditions=${conditions.join(',')}`);
+      if (genders.length > 0) urlParams.push(`genders=${genders.join(',')}`);
+      
+      // Add price ranges if they exist
+      if (priceRanges.length > 0) {
+        const priceRangeIds = priceRanges.map(range => range.id);
+        urlParams.push(`priceRangeIds=${priceRangeIds.join(',')}`);
+      }
+      
+      // Construct URL
+      const url = `/search${urlParams.length > 0 ? `?${urlParams.join('&')}` : ''}`;
+      
+      // Update URL without reloading the page
+      try {
+        window.history.pushState({}, '', url);
+      } catch (e) {
+        // Fallback for React Native
+        router.setParams(urlParams.reduce((acc, param) => {
+          const [key, value] = param.split('=');
+          acc[key] = value;
+          return acc;
+        }, {}));
+      }
     }
-
-    // Add conditions parameter if any conditions are selected
-    if (updatedFilters.conditions?.length > 0) {
-      params.push(`conditions=${updatedFilters.conditions.join(',')}`);
+  };
+  
+  // Remove a filter
+  const removeFilter = (type, value) => {
+    const newFilters = { ...filters };
+    
+    switch (type) {
+      case 'category':
+        newFilters.categories = filters.categories.filter(item => item !== value);
+        break;
+      case 'size':
+        newFilters.sizes = filters.sizes.filter(item => item !== value);
+        break;
+      case 'condition':
+        newFilters.conditions = filters.conditions.filter(item => item !== value);
+        break;
+      case 'gender':
+        newFilters.genders = filters.genders.filter(item => item !== value);
+        break;
+      case 'priceRange':
+        newFilters.priceRanges = filters.priceRanges.filter(range => range.id !== value);
+        break;
     }
-
-    // Add gender parameter if any genders are selected
-    if (updatedFilters.genders?.length > 0) {
-      params.push(`genders=${updatedFilters.genders.join(',')}`);
-    }
-
-    // Add price range parameters if any price ranges are selected
-    if (updatedFilters.priceRanges?.length > 0) {
-      const priceRangeIds = updatedFilters.priceRanges.map(range => range.id);
-      params.push(`priceRangeIds=${priceRangeIds.join(',')}`);
-    }
-
-    // Construct the query string
-    const queryString = params.join('&');
-
-    // Navigate to the search route with the updated parameters
-    router.push(`/search?${queryString}`);
+    
+    updateFilters(newFilters);
   };
-
-  // Remove a category filter
-  const removeCategory = (category: string) => {
-    const newCategories = selectedCategories.filter(item => item !== category);
-    setSelectedCategories(newCategories);
-
-    navigateWithUpdatedFilters({
-      categories: newCategories,
-      sizes: selectedSizes,
-      conditions: selectedConditions,
-      priceRanges: priceRanges,
-      genders: selectedGenders
-    });
-  };
-
-  // Remove a size filter
-  const removeSize = (size: string) => {
-    const newSizes = selectedSizes.filter(item => item !== size);
-    setSelectedSizes(newSizes);
-
-    navigateWithUpdatedFilters({
-      categories: selectedCategories,
-      sizes: newSizes,
-      conditions: selectedConditions,
-      priceRanges: priceRanges,
-      genders: selectedGenders
-    });
-  };
-
-  // Remove a condition filter
-  const removeCondition = (condition: string) => {
-    const newConditions = selectedConditions.filter(item => item !== condition);
-    setSelectedConditions(newConditions);
-
-    navigateWithUpdatedFilters({
-      categories: selectedCategories,
-      sizes: selectedSizes,
-      conditions: newConditions,
-      priceRanges: priceRanges,
-      genders: selectedGenders
-    });
-  };
-
-  // Remove a gender filter
-  const removeGender = (gender: string) => {
-    const newGenders = selectedGenders.filter(item => item !== gender);
-    setSelectedGenders(newGenders);
-
-    navigateWithUpdatedFilters({
-      categories: selectedCategories,
-      sizes: selectedSizes,
-      conditions: selectedConditions,
-      priceRanges: priceRanges,
-      genders: newGenders
-    });
-  };
-
-  // Remove price range filter
-  const removePriceRange = (priceRangeId: string) => {
-    const newPriceRanges = priceRanges.filter(range => range.id !== priceRangeId);
-    setPriceRanges(newPriceRanges);
-
-    navigateWithUpdatedFilters({
-      categories: selectedCategories,
-      sizes: selectedSizes,
-      conditions: selectedConditions,
-      priceRanges: newPriceRanges,
-      genders: selectedGenders
-    });
-  };
-
+  
   // Clear all filters
   const clearAllFilters = () => {
-    // Reset all filters
-    setSelectedCategories([]);
-    setSelectedSizes([]);
-    setSelectedConditions([]);
-    setPriceRanges([]);
-    setSelectedGenders([]);
-
-    // Mark that we're initiating a URL change
-    isHandlingUrlChange.current = true;
-
-    // If there's a search query, keep only that parameter
-    const query = searchQuery || '';
-
-    // Navigate with only the query parameter
-    if (query) {
-      router.push(`/search?query=${encodeURIComponent(query)}`);
-    } else {
-      router.push('/search');
-    }
+    updateFilters({
+      categories: [],
+      sizes: [],
+      conditions: [],
+      genders: [],
+      priceRanges: []
+    });
   };
-
+  
   // Check if any filters are applied
   const hasFilters = () => {
-    return selectedCategories.length > 0 ||
-      selectedSizes.length > 0 ||
-      selectedConditions.length > 0 ||
-      priceRanges.length > 0 ||
-      selectedGenders.length > 0;
+    return filters.categories.length > 0 ||
+      filters.sizes.length > 0 ||
+      filters.conditions.length > 0 ||
+      filters.genders.length > 0 ||
+      filters.priceRanges.length > 0;
   };
-
+  
+  // Format price display
+  const formatPrice = (price) => {
+    if (typeof price !== 'number') return '$0.00';
+    return `$${price.toFixed(2)}`;
+  };
+  
   return (
     <SafeAreaView style={styles.container}>
       <NavigationBar showBackButton={true} />
-
+      
       <View style={styles.resultsContainer}>
-        {/* Show applied filters */}
+        {/* Applied filters */}
         {hasFilters() && (
           <View style={styles.filtersContainer}>
             <View style={styles.filtersHeader}>
@@ -342,71 +282,71 @@ export default function SearchScreen() {
                 <Text style={styles.clearAllText}>Clear All</Text>
               </TouchableOpacity>
             </View>
-
+            
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filtersScrollContent}
             >
               {/* Gender filters */}
-              {selectedGenders.map((gender, index) => (
+              {filters.genders.map((gender, index) => (
                 <View key={`gender-${index}`} style={styles.filterTag}>
                   <Text style={styles.filterTagText}>{gender}</Text>
                   <TouchableOpacity
                     style={styles.removeTagButton}
-                    onPress={() => removeGender(gender)}
+                    onPress={() => removeFilter('gender', gender)}
                   >
                     <Ionicons name="close-circle" size={18} color="#777" />
                   </TouchableOpacity>
                 </View>
               ))}
-
+              
               {/* Category filters */}
-              {selectedCategories.map((category, index) => (
+              {filters.categories.map((category, index) => (
                 <View key={`cat-${index}`} style={styles.filterTag}>
                   <Text style={styles.filterTagText}>{category}</Text>
                   <TouchableOpacity
                     style={styles.removeTagButton}
-                    onPress={() => removeCategory(category)}
+                    onPress={() => removeFilter('category', category)}
                   >
                     <Ionicons name="close-circle" size={18} color="#777" />
                   </TouchableOpacity>
                 </View>
               ))}
-
+              
               {/* Size filters */}
-              {selectedSizes.map((size, index) => (
+              {filters.sizes.map((size, index) => (
                 <View key={`size-${index}`} style={styles.filterTag}>
                   <Text style={styles.filterTagText}>Size: {size}</Text>
                   <TouchableOpacity
                     style={styles.removeTagButton}
-                    onPress={() => removeSize(size)}
+                    onPress={() => removeFilter('size', size)}
                   >
                     <Ionicons name="close-circle" size={18} color="#777" />
                   </TouchableOpacity>
                 </View>
               ))}
-
+              
               {/* Condition filters */}
-              {selectedConditions.map((condition, index) => (
+              {filters.conditions.map((condition, index) => (
                 <View key={`cond-${index}`} style={styles.filterTag}>
                   <Text style={styles.filterTagText}>{condition}</Text>
                   <TouchableOpacity
                     style={styles.removeTagButton}
-                    onPress={() => removeCondition(condition)}
+                    onPress={() => removeFilter('condition', condition)}
                   >
                     <Ionicons name="close-circle" size={18} color="#777" />
                   </TouchableOpacity>
                 </View>
               ))}
-
+              
               {/* Price range filters */}
-              {priceRanges.map((range, index) => (
+              {filters.priceRanges.map((range, index) => (
                 <View key={`price-${index}`} style={styles.filterTag}>
                   <Text style={styles.filterTagText}>{range.label}</Text>
                   <TouchableOpacity
                     style={styles.removeTagButton}
-                    onPress={() => removePriceRange(range.id)}
+                    onPress={() => removeFilter('priceRange', range.id)}
                   >
                     <Ionicons name="close-circle" size={18} color="#777" />
                   </TouchableOpacity>
@@ -415,17 +355,17 @@ export default function SearchScreen() {
             </ScrollView>
           </View>
         )}
-
+        
         {/* Search query display */}
-        {searchQuery && (
+        {filters.query && (
           <View style={styles.queryContainer}>
             <Text style={styles.queryText}>
-              Search results for: <Text style={styles.queryHighlight}>{searchQuery}</Text>
+              Search results for: <Text style={styles.queryHighlight}>{filters.query}</Text>
             </Text>
           </View>
         )}
-
-        {/* Results count and list */}
+        
+        {/* Results */}
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#0077b3" />
@@ -436,21 +376,27 @@ export default function SearchScreen() {
             <View style={styles.resultsHeader}>
               <Text style={styles.resultsCount}>{results.length} items found</Text>
             </View>
-
+            
             {results.length > 0 ? (
               <FlatList
                 data={results}
                 numColumns={2}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id || String(Math.random())}
+                initialNumToRender={6}
+                maxToRenderPerBatch={6}
+                windowSize={5}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={styles.productCard}
                     onPress={() => router.push(`/product/${item.id}`)}
                   >
-                    <Image source={{ uri: item.image }} style={styles.productImage} />
+                    <Image 
+                      source={{ uri: item.image }} 
+                      style={styles.productImage}
+                    />
                     <View style={styles.productInfo}>
                       <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-                      <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+                      <Text style={styles.productPrice}>{formatPrice(item.price)}</Text>
                       <View style={styles.productMeta}>
                         <Text style={styles.productSize}>{item.size}</Text>
                         <Text style={styles.productCondition}>{item.condition}</Text>
@@ -600,6 +546,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 150,
     resizeMode: 'cover',
+    backgroundColor: '#f5f5f5',
   },
   productInfo: {
     padding: 10,

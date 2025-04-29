@@ -28,7 +28,7 @@ interface NavigationBarProps {
 export const FILTER_OPTIONS = {
   CATEGORIES: ["Tops", "Bottoms", "Outerwear", "Footwear", "Dresses"],
   SIZES: ["XS", "S", "M", "L", "XL", "XXL", "One Size"],
-  CONDITIONS: ["New with tags", "Like new", "Excellent", "Good", "Fair", "Poor"],
+  CONDITIONS: ["New with tags", "Like new", "Good", "Poor"],
   PRICE_RANGES: [
     { id: "p1", label: "Under $25", min: 0, max: 25 },
     { id: "p2", label: "$25-$50", min: 25, max: 50 },
@@ -272,15 +272,6 @@ const handleNavigation = (item: string) => {
         </TouchableOpacity>
 
         <View style={styles.headerIcons}>
-          {showAddButton && isAuthenticated && (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => router.push('/ProductListing')}
-            >
-              <Ionicons name="add-circle-outline" size={22} color="white" style={styles.addIcon} />
-              <Text style={styles.addButtonText}>List</Text>
-            </TouchableOpacity>
-          )}
 
           <TouchableOpacity
             onPress={() => isAuthenticated ? navigate.goToWishlist() : navigate.goToRegister()}

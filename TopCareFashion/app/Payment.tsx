@@ -40,12 +40,7 @@ const PaymentScreen = () => {
   const [saveCard, setSaveCard] = useState(false);
   
   // Order summary values - in a real app these would come from your cart context
-  const orderSummary = {
-    subtotal: 89.99,
-    shipping: 4.99,
-    tax: 8.01,
-    total: 102.99
-  };
+  const orderTotal = 102.99;
 
   // Format card number with spaces
   const formatCardNumber = (value) => {
@@ -171,26 +166,10 @@ const PaymentScreen = () => {
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
-          {/* Order Summary */}
-          <View style={styles.orderSummaryContainer}>
-            <Text style={styles.sectionTitle}>Order Summary</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>${orderSummary.subtotal.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Shipping</Text>
-              <Text style={styles.summaryValue}>${orderSummary.shipping.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tax</Text>
-              <Text style={styles.summaryValue}>${orderSummary.tax.toFixed(2)}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>${orderSummary.total.toFixed(2)}</Text>
-            </View>
+          {/* Order Total Card */}
+          <View style={styles.orderTotalCard}>
+            <Text style={styles.orderTotalLabel}>Order Total:</Text>
+            <Text style={styles.orderTotalValue}>${orderTotal.toFixed(2)}</Text>
           </View>
           
           {/* Payment Method Selection */}
@@ -386,7 +365,7 @@ const PaymentScreen = () => {
             ) : (
               <>
                 <Ionicons name="shield-checkmark" size={20} color="white" style={styles.payButtonIcon} />
-                <Text style={styles.payButtonText}>Pay ${orderSummary.total.toFixed(2)}</Text>
+                <Text style={styles.payButtonText}>Pay ${orderTotal.toFixed(2)}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -448,47 +427,28 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 15,
   },
-  orderSummaryContainer: {
+  orderTotalCard: {
     backgroundColor: 'white',
     borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  summaryLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  summaryValue: {
-    fontSize: 14,
-    color: '#333',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 10,
-  },
-  totalRow: {
+    padding: 20,
+    marginTop: 10,
+    marginBottom: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  totalLabel: {
-    fontSize: 16,
+  orderTotalLabel: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
-  totalValue: {
-    fontSize: 18,
+  orderTotalValue: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#0077b3',
   },

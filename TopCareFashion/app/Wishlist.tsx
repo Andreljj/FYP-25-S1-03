@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  FlatList, 
-  Image, 
-  TouchableOpacity, 
+// app/Wishlist.tsx
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Image,
+  TouchableOpacity,
   SafeAreaView,
   Platform,
   Dimensions,
   ActivityIndicator,
-  Alert,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useWishlist } from './context/WishlistContext';
+import { useCart } from './context/CartContext';
+import { useAuth } from './context/AuthContext';
 
 // Get screen dimensions for responsive layout
 const { width } = Dimensions.get('window');
@@ -24,57 +28,54 @@ export default function WishlistScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
+  const [showMixMatchTooltip, setShowMixMatchTooltip] = useState(false);
   
-  const [wishlist, setWishlist] = useState([
-    { 
-      id: '1', 
-      image: 'https://media.karousell.com/media/photos/products/2024/12/23/maroon_offshoulder_top_1734940583_ef75c88a_thumbnail.jpg', 
-      price: 'S$9.72', 
-      originalPrice: 'S$15.99',
-      liked: true, 
-      description: 'Maroon Off-Shoulder Top',
-      size: 'M',
-      brand: 'FashionTrend'
-    },
-    { 
-      id: '2', 
-      image: 'https://i5.walmartimages.com/seo/Casual-Plain-Top-Sweetheart-Coral-Pink-Long-Sleeve-Women-s-Blouses-XS-2_c899631c-6e17-458c-92f2-29af78a98984.d6fc6a1edabb29bcc184b18ad4547aa0.jpeg', 
-      price: 'S$18.70', 
-      originalPrice: 'S$25.00',
-      liked: true, 
-      description: 'Casual Long Sleeve Blouse',
-      size: 'S',
-      brand: 'StyleCo'
-    },
-    { 
-      id: '3', 
-      image: 'https://www.wholesalefashiontrends.com/cdn/shop/files/wft377_837d91bb-6668-4cbb-87f1-0ecf49353c80_720x.jpg', 
-      price: 'S$19.32', 
-      originalPrice: 'S$38.50',
-      liked: true, 
-      description: 'Pink Bell Bottom Pants',
-      size: 'L',
-      brand: 'UrbanChic'
-    },
-    { 
-      id: '4', 
-      image: 'https://5.imimg.com/data5/VE/UR/RF/NSDMERP-78375233/black-ladies-hils-1572002383415-250x250.jpg', 
-      price: 'S$41.54', 
-      originalPrice: 'S$59.99',
-      liked: true, 
-      description: 'Elegant Black Heels',
-      size: '38',
-      brand: 'LuxeFootwear'
-    },
-  ]);
+  // Use contexts
+  const { wishlist, removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+
+  // Handle Mix n Match
+  const handleMixAndMatch = () => {
+    if (!isAuthenticated) {
+      // Redirect to login if not authenticated
+      router.push('/Login');
+      return;
+    }
+
+    if (wishlist.length === 0) {
+      Alert.alert(
+        "Empty Wishlist",
+        "Add items to your wishlist to use Mix n Match feature",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // Navigate to Mix n Match screen with wishlist items
+    Alert.alert("Mix n Match", "Opening Mix n Match tool for your wishlist items");
+    // Implement the actual navigation when Mix n Match page is ready
+    // router.push('/MixAndMatch');
+  };
 
   // Calculate discount percentage
   const getDiscountPercentage = (price, originalPrice) => {
-    const current = parseFloat(price.replace('S$', ''));
-    const original = parseFloat(originalPrice.replace('S$', ''));
-    return Math.round(((original - current) / original) * 100);
+    try {
+      // Handle cases where price might be a string like "S$10.99"
+      const current = typeof price === 'string' ? parseFloat(price.replace(/[^\d.-]/g, '')) : price;
+      const original = typeof originalPrice === 'string' ? parseFloat(originalPrice.replace(/[^\d.-]/g, '')) : originalPrice;
+
+      if (isNaN(current) || isNaN(original) || original === 0) {
+        return 0; // Return 0% discount if any value is invalid
+      }
+
+      return Math.round(((original - current) / original) * 100);
+    } catch (error) {
+      console.error("Error calculating discount:", error);
+      return 0;
+    }
   };
-  
+
   // Calculate number of columns based on screen width
   const getNumColumns = () => {
     if (isWeb) {
@@ -92,37 +93,45 @@ export default function WishlistScreen() {
     }));
   };
 
-  const toggleLike = (id) => {
-    setWishlist(prevWishlist =>
-      prevWishlist.map(item =>
-        item.id === id ? { ...item, liked: !item.liked } : item
-      )
-    );
-  };
+  const handleAddToCart = (item) => {
+    console.log("Adding wishlist item to cart:", item); // Debug log
 
-  const removeFromWishlist = (id) => {
-    Alert.alert(
-      "Remove from Wishlist",
-      "Are you sure you want to remove this item from your wishlist?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Remove",
-          onPress: () => {
-            setWishlist(prevWishlist => prevWishlist.filter(item => item.id !== id));
-          },
-          style: "destructive"
-        }
-      ]
-    );
-  };
+    try {
+      // Parse prices from strings to numbers
+      let itemPrice = typeof item.price === 'string'
+        ? parseFloat(item.price.replace(/[^\d.-]/g, ''))
+        : item.price;
 
-  const addToCart = (item) => {
-    // In a real app, you would add the item to the cart
-    Alert.alert("Success", `${item.description} has been added to your cart!`);
+      if (isNaN(itemPrice)) {
+        itemPrice = 0;
+        console.log("Warning: Failed to parse item price, using 0 instead.");
+      }
+
+      // Calculate discount from percentage if available
+      const discount = getDiscountPercentage(item.price, item.originalPrice);
+
+      // Create properly formatted cart item
+      const cartItem = {
+        id: item.id,
+        name: item.description || "Product", // Use description as name
+        price: itemPrice,
+        discountedPrice: discount > 0 ? itemPrice : undefined, // If there's a discount, current price is already discounted
+        image: item.image,
+        size: item.size,
+        color: item.color,
+        quantity: 1,
+        discount: discount > 0 ? discount : undefined
+      };
+
+      console.log("Prepared cart item:", cartItem); // Debug log
+
+      // Add to cart and navigate
+      addToCart(cartItem);
+      router.push("/Cart");
+    } catch (error) {
+      console.error("Error in handleAddToCart:", error);
+      Alert.alert("Error", "Failed to add item to cart. Please try again.");
+    }
   };
 
   const navigateToProductDetails = (id) => {
@@ -137,33 +146,14 @@ export default function WishlistScreen() {
   const numColumns = getNumColumns();
   const itemWidth = (width - (40 + (numColumns * 16))) / numColumns;
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.safeContainer}>
-        <View style={styles.customHeader}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Wishlist</Text>
-          <View style={styles.rightHeaderPlaceholder} />
-        </View>
-        
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0077b3" />
-          <Text style={styles.loadingText}>Loading your wishlist...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   // Render item with an explicit width based on numColumns
   const renderItem = ({ item }) => {
     const discountPercentage = getDiscountPercentage(item.price, item.originalPrice);
-    
+
     return (
       <View style={[styles.itemContainer, { width: itemWidth }]}>
         {/* Product Image with TouchableOpacity */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.imageContainer}
           onPress={() => navigateToProductDetails(item.id)}
           activeOpacity={0.8}
@@ -174,50 +164,50 @@ export default function WishlistScreen() {
               <Text style={styles.discountText}>{discountPercentage}% OFF</Text>
             </View>
           )}
-          
+
           {imageErrors[item.id] ? (
             <View style={[styles.itemImage, styles.errorImageContainer]}>
               <Ionicons name="image-outline" size={40} color="#ccc" />
               <Text style={styles.errorImageText}>Image not available</Text>
             </View>
           ) : (
-            <Image 
-              source={{ uri: item.image }} 
+            <Image
+              source={{ uri: item.image }}
               style={styles.itemImage}
               onError={() => handleImageError(item.id)}
             />
           )}
         </TouchableOpacity>
-        
+
         {/* Heart Icon Button */}
-        <TouchableOpacity 
-          onPress={() => removeFromWishlist(item.id)} 
+        <TouchableOpacity
+          onPress={() => removeFromWishlist(item.id)}
           style={styles.heartIcon}
         >
           <Ionicons name="heart" size={22} color="#ff3b30" />
         </TouchableOpacity>
-        
+
         {/* Product Info */}
         <View style={styles.productInfo}>
           <Text style={styles.brandName}>{item.brand}</Text>
-          <Text 
+          <Text
             style={styles.itemDescription}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
             {item.description}
           </Text>
-          
+
           <Text style={styles.sizeText}>Size: {item.size}</Text>
-          
+
           <View style={styles.priceContainer}>
             <Text style={styles.itemPrice}>{item.price}</Text>
             <Text style={styles.originalPrice}>{item.originalPrice}</Text>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.addToCartButton}
-            onPress={() => addToCart(item)}
+            onPress={() => handleAddToCart(item)}
           >
             <Ionicons name="cart-outline" size={18} color="white" />
             <Text style={styles.addToCartText}>Add to Cart</Text>
@@ -227,11 +217,30 @@ export default function WishlistScreen() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safeContainer}>
+        <View style={styles.customHeader}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Wishlist</Text>
+          <View style={styles.rightHeaderPlaceholder} />
+        </View>
+
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0077b3" />
+          <Text style={styles.loadingText}>Loading your wishlist...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeContainer}>
       <StatusBar barStyle="light-content" backgroundColor="#0077b3" />
-      
-      {/* Custom Header with Back Button and Item Count */}
+
+      {/* Custom Header with Back Button, Item Count, and Mix n Match Button */}
       <View style={styles.customHeader}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -244,18 +253,32 @@ export default function WishlistScreen() {
             </View>
           )}
         </View>
-        <View style={styles.rightHeaderPlaceholder} />
+        <TouchableOpacity 
+          style={styles.mixMatchButton}
+          onPress={handleMixAndMatch}
+          onMouseEnter={() => setShowMixMatchTooltip(true)}
+          onMouseLeave={() => setShowMixMatchTooltip(false)}
+          onPressIn={() => setShowMixMatchTooltip(true)}
+          onPressOut={() => setTimeout(() => setShowMixMatchTooltip(false), 1500)}
+        >
+          <Ionicons name="color-wand-outline" size={24} color="white" />
+          {showMixMatchTooltip && (
+            <View style={styles.mixMatchTooltip}>
+              <Text style={styles.mixMatchTooltipText}>Mix n Match</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
-      
+
       <View style={styles.container}>
         {wishlist.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="heart-dislike" size={80} color="#ccc" />
             <Text style={styles.emptyText}>Your wishlist is empty</Text>
             <Text style={styles.emptySubText}>Items you save to your wishlist will appear here</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.browseButton}
-              onPress={() => router.push("/")}
+              onPress={() => router.push("/Homepage")}
             >
               <Text style={styles.browseButtonText}>Browse Products</Text>
             </TouchableOpacity>
@@ -315,6 +338,27 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+  },
+  mixMatchButton: {
+    padding: 8,
+    position: 'relative',
+  },
+  mixMatchTooltip: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginTop: 5,
+    zIndex: 999,
+    minWidth: 100,
+  },
+  mixMatchTooltipText: {
+    color: 'white',
+    fontSize: 12,
+    textAlign: 'center',
   },
   rightHeaderPlaceholder: {
     width: 40, // To balance the header

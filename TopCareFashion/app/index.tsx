@@ -20,7 +20,6 @@ import NavigationBar from './NavigationBar';
 import { useAuth } from './context/AuthContext';
 import { useRouter } from 'expo-router';
 import PlatformStatistics from './PlatformStatistics';
-import TopRatedSellers from './TopRatedSellers';
 import { recentItems, dealsItems, testimonials, reviews } from './data/mockData';
 
 const { width } = Dimensions.get('window');
@@ -213,16 +212,7 @@ const UserReviews = () => {
             </View>
           </View>
           
-          <View style={styles.reviewFooter}>
-            <View style={styles.helpfulContainer}>
-              <Ionicons name="thumbs-up-outline" size={14} color="#666" />
-              <Text style={styles.helpfulText}>{review.helpful} found this helpful</Text>
-            </View>
-            <TouchableOpacity style={styles.readMoreButton}>
-              <Text style={styles.readMoreText}>Read more</Text>
-              <Ionicons name="chevron-forward" size={14} color="#0077b3" />
-            </TouchableOpacity>
-          </View>
+          {/* Review footer removed as requested */}
         </TouchableOpacity>
       ))}
     </View>
@@ -299,11 +289,12 @@ const IndexScreen = () => {
             }}
             scrollEventThrottle={400}
           >
-            {/* Hero banner for guests */}
+            {/* Hero banner for guests - zoomed in more */}
             <View style={styles.heroBanner}>
               <Image 
-                source={{ uri: 'https://images.pexels.com/photos/934063/pexels-photo-934063.jpeg' }} 
+                source={require('../app/images/Top Care banner.png')} 
                 style={styles.heroBackground}
+                resizeMode="cover"
               />
               <View style={styles.heroOverlay}>
                 <Text style={styles.heroTitle}>Second-Hand. First Choice.</Text>
@@ -369,16 +360,15 @@ const IndexScreen = () => {
               contentContainerStyle={styles.horizontalListContent}
             />
 
-            {/* Testimonials Section - NEW SECTION */}
+            {/* Testimonials Section */}
             <Testimonials />
 
             {/* Platform Statistics Section */}
             <PlatformStatistics />
 
-            {/* Top Rated Sellers Section */}
-            <TopRatedSellers />
+            {/* Top Rated Sellers Section removed as requested */}
 
-            {/* User Reviews Section - NEW SECTION */}
+            {/* User Reviews Section */}
             <UserReviews />
 
             {/* Trending Deals Section */}
@@ -419,6 +409,15 @@ const IndexScreen = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalListContent}
             />
+            
+            {/* Benefits Banner - zoomed in more */}
+            <View style={styles.benefitsBannerContainer}>
+              <Image 
+                source={require('../app/images/bannerbenefits.png')} 
+                style={styles.benefitsBanner}
+                resizeMode="cover"
+              />
+            </View>
             
             {/* Join as Seller CTA - only for guests */}
             <View style={styles.joinSellerContainer}>
@@ -484,15 +483,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f8f8" 
   },
   
-  // Hero Banner styles
+  // Benefits Banner styles - zoomed in more
+  benefitsBannerContainer: {
+    marginTop: 25,
+    marginBottom: 20,
+    paddingHorizontal: 15,
+  },
+  benefitsBanner: {
+    width: '100%',
+    height: undefined,
+    aspectRatio: 2.2, // Reduced from 3 to zoom in more
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  
+  // Hero Banner styles - zoomed in more
   heroBanner: {
-    height: 300,
+    height: 280, // Increased from 260 to provide more space for the image
     position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: '#f0f8ff',
   },
   heroBackground: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
+    transform: [{scale: 1.15}], // Add scale to zoom in the image
   },
   heroOverlay: {
     position: 'absolute',
@@ -500,7 +520,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -975,50 +995,7 @@ const styles = StyleSheet.create({
     color: '#555',
     lineHeight: 18,
   },
-  reviewFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 10,
-  },
-  helpfulContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  helpfulText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 5,
-  },
-  readMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  readMoreText: {
-    fontSize: 12,
-    color: '#0077b3',
-    fontWeight: '500',
-  },
-  writeReviewButton: {
-    backgroundColor: '#0077b3',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 5,
-  },
-  writeReviewIcon: {
-    marginRight: 8,
-  },
-  writeReviewText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  // Review footer styles removed
 });
 
 export default IndexScreen;

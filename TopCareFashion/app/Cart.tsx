@@ -1,21 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   StyleSheet, 
   Text, 
   View, 
-  FlatList, 
   TouchableOpacity, 
   Image, 
   SafeAreaView, 
   StatusBar, 
   Platform, 
   Dimensions, 
-  ScrollView, 
-  TextInput,
-  Alert 
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useCart } from './context/CartContext';
 
 // Get screen dimensions for responsive layout
 const { width } = Dimensions.get('window');
@@ -23,68 +21,16 @@ const isWeb = Platform.OS === 'web';
 
 export default function CartScreen() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState([
-    { 
-      id: '1', 
-      name: 'Women Minimalist Thick Heeled Sandals', 
-      price: 56, 
-      discountedPrice: 42, 
-      image: 'https://pfst.cf2.poecdn.net/base/image/a6a9cfeeff06afcc5adb87f75e922ed2f08e7f2acfc64da36eb4a3373e30b8b4?w=225&h=225', 
-      color: 'Gold', 
-      size: '38', 
-      quantity: 1,
-      inStock: true,
-      discount: 25
-    },
-    { 
-      id: '2', 
-      name: 'Black Cargo Pants High Waist', 
-      price: 68, 
-      discountedPrice: 60, 
-      image: 'https://pfst.cf2.poecdn.net/base/image/b459e7272edb6aa9a9a4a6ecbc6d748395f354f5d9fb21166ecd74a0bcfafe20?w=183&h=275', 
-      color: 'Black', 
-      size: 'M', 
-      quantity: 1,
-      inStock: true,
-      discount: 12
-    },
-  ]);
+  const { cartItems, removeFromCart } = useCart();
   
-  const [promoCode, setPromoCode] = useState('');
-  const [isPromoApplied, setIsPromoApplied] = useState(false);
-  const [promoDiscount, setPromoDiscount] = useState(0);
-
-  // Remove item from cart
-  const removeItemFromCart = (itemId) => {
-    Alert.alert(
-      "Remove Item",
-      "Are you sure you want to remove this item from your cart?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Remove",
-          onPress: () => {
-            setCartItems(cartItems.filter((item) => item.id !== itemId));
-          },
-          style: "destructive"
-        }
-      ]
-    );
-  };
-
-  // Save for later functionality
-  const saveForLater = (itemId) => {
-    // In a real app, would move to saved items
-    Alert.alert("Saved", "Item has been saved for later");
-    setCartItems(cartItems.filter((item) => item.id !== itemId));
-  };
-
   // Calculate subtotal
   const calculateSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.discountedPrice * item.quantity), 0);
+    return cartItems.reduce((total, item) => total + ((item.discountedPrice || item.price) * item.quantity), 0);
+  };
+
+  // Calculate platform fee (fixed 30 cents)
+  const calculatePlatformFee = () => {
+    return 0.30; // 30 cents fixed platform fee
   };
 
   // Calculate shipping (free over $50)
@@ -93,50 +39,27 @@ export default function CartScreen() {
     return subtotal >= 50 ? 0 : 4.99;
   };
 
-  // Calculate tax
-  const calculateTax = () => {
-    return calculateSubtotal() * 0.08;
-  };
-
   // Calculate total
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const shipping = calculateShipping();
-    const tax = calculateTax();
-    return subtotal + shipping + tax - promoDiscount;
+    const platformFee = calculatePlatformFee();
+    return subtotal + shipping + platformFee;
   };
 
   // Format currency
   const formatCurrency = (amount) => {
+    if (typeof amount !== 'number') {
+      // Try to parse it as a number if it's a string
+      const parsed = parseFloat(amount);
+      if (isNaN(parsed)) {
+        return 'S$0.00'; // Fallback if parsing fails
+      }
+      amount = parsed;
+    }
     return `S$${amount.toFixed(2)}`;
   };
-
-  // Increase quantity
-  const increaseQuantity = (itemId) => {
-    setCartItems(cartItems.map(item => 
-      item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
-    ));
-  };
-
-  // Decrease quantity
-  const decreaseQuantity = (itemId) => {
-    setCartItems(cartItems.map(item => 
-      item.id === itemId && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item
-    ));
-  };
   
-  // Apply promo code
-  const applyPromoCode = () => {
-    if (promoCode.trim().toLowerCase() === 'welcome10') {
-      const discount = calculateSubtotal() * 0.1;
-      setPromoDiscount(discount);
-      setIsPromoApplied(true);
-      Alert.alert("Success", "Promo code applied successfully!");
-    } else {
-      Alert.alert("Invalid Code", "Please enter a valid promo code");
-    }
-  };
-
   // Handle checkout
   const handleCheckout = () => {
     router.push('/Payment');
@@ -144,7 +67,7 @@ export default function CartScreen() {
   
   // Continue shopping
   const continueShopping = () => {
-    router.push('/');
+    router.push('/Homepage');
   };
   
   // Handle back button
@@ -195,12 +118,20 @@ export default function CartScreen() {
                   {/* Item Details */}
                   <View style={styles.itemDetails}>
                     <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemColorSize}>Color: {item.color} • Size: {item.size}</Text>
+                    <Text style={styles.itemColorSize}>
+                      {item.color && `Color: ${item.color}`}
+                      {item.color && item.size && ' • '}
+                      {item.size && `Size: ${item.size}`}
+                    </Text>
                     
                     {/* Price Display */}
                     <View style={styles.priceContainer}>
-                      <Text style={styles.discountedPrice}>{formatCurrency(item.discountedPrice)}</Text>
-                      <Text style={styles.originalPrice}>{formatCurrency(item.price)}</Text>
+                      <Text style={styles.discountedPrice}>
+                        {formatCurrency(item.discountedPrice || item.price)}
+                      </Text>
+                      {item.discountedPrice && item.price && (
+                        <Text style={styles.originalPrice}>{formatCurrency(item.price)}</Text>
+                      )}
                       {item.discount > 0 && (
                         <View style={styles.discountBadge}>
                           <Text style={styles.discountText}>{item.discount}% OFF</Text>
@@ -208,87 +139,19 @@ export default function CartScreen() {
                       )}
                     </View>
                     
-                    {item.inStock ? (
-                      <Text style={styles.inStockText}>In Stock</Text>
-                    ) : (
-                      <Text style={styles.outOfStockText}>Out of Stock</Text>
-                    )}
-                    
-                    {/* Quantity Controls */}
-                    <View style={styles.actionRow}>
-                      <View style={styles.quantityContainer}>
-                        <TouchableOpacity 
-                          style={styles.quantityButton}
-                          onPress={() => decreaseQuantity(item.id)}
-                          disabled={item.quantity <= 1}
-                        >
-                          <Ionicons 
-                            name="remove" 
-                            size={18} 
-                            color={item.quantity <= 1 ? "#ccc" : "#333"} 
-                          />
-                        </TouchableOpacity>
-                        <Text style={styles.quantity}>{item.quantity}</Text>
-                        <TouchableOpacity 
-                          style={styles.quantityButton}
-                          onPress={() => increaseQuantity(item.id)}
-                        >
-                          <Ionicons name="add" size={18} color="#333" />
-                        </TouchableOpacity>
-                      </View>
-                      
-                      <View style={styles.actionButtons}>
-                        <TouchableOpacity 
-                          style={styles.actionButton}
-                          onPress={() => saveForLater(item.id)}
-                        >
-                          <Ionicons name="bookmark-outline" size={16} color="#0077b3" />
-                          <Text style={styles.actionButtonText}>Save</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={styles.actionButton}
-                          onPress={() => removeItemFromCart(item.id)}
-                        >
-                          <Ionicons name="trash-outline" size={16} color="#ff3b30" />
-                          <Text style={[styles.actionButtonText, styles.removeText]}>Remove</Text>
-                        </TouchableOpacity>
-                      </View>
+                    {/* Remove Button - Fixed implementation */}
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={() => removeFromCart(item.id)}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#ff3b30" />
+                        <Text style={[styles.actionButtonText, styles.removeText]}>Remove</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
               ))}
-            </View>
-            
-            {/* Promo Code Section */}
-            <View style={styles.promoContainer}>
-              <Text style={styles.promoTitle}>Have a promo code?</Text>
-              <View style={styles.promoInputContainer}>
-                <TextInput
-                  style={styles.promoInput}
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChangeText={setPromoCode}
-                  editable={!isPromoApplied}
-                />
-                <TouchableOpacity 
-                  style={[
-                    styles.promoButton, 
-                    isPromoApplied && styles.promoButtonApplied
-                  ]}
-                  onPress={applyPromoCode}
-                  disabled={isPromoApplied || promoCode.trim() === ''}
-                >
-                  <Text style={styles.promoButtonText}>
-                    {isPromoApplied ? "Applied" : "Apply"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {isPromoApplied && (
-                <Text style={styles.promoAppliedText}>
-                  Promo code applied: {formatCurrency(promoDiscount)} discount
-                </Text>
-              )}
             </View>
             
             {/* Order Summary */}
@@ -301,6 +164,11 @@ export default function CartScreen() {
               </View>
               
               <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Platform Fee</Text>
+                <Text style={styles.summaryValue}>{formatCurrency(calculatePlatformFee())}</Text>
+              </View>
+              
+              <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping</Text>
                 {calculateShipping() === 0 ? (
                   <Text style={styles.freeShippingText}>FREE</Text>
@@ -308,18 +176,6 @@ export default function CartScreen() {
                   <Text style={styles.summaryValue}>{formatCurrency(calculateShipping())}</Text>
                 )}
               </View>
-              
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Estimated Tax</Text>
-                <Text style={styles.summaryValue}>{formatCurrency(calculateTax())}</Text>
-              </View>
-              
-              {isPromoApplied && (
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Promo Discount</Text>
-                  <Text style={styles.discountValue}>-{formatCurrency(promoDiscount)}</Text>
-                </View>
-              )}
               
               <View style={styles.divider} />
               
@@ -329,7 +185,7 @@ export default function CartScreen() {
               </View>
               
               <Text style={styles.taxNote}>
-                *All prices include GST and taxes where applicable
+                *Platform fee helps maintain our services and secure transactions
               </Text>
             </View>
           </ScrollView>
@@ -429,7 +285,7 @@ const styles = StyleSheet.create({
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 15,
   },
   discountedPrice: {
     fontSize: 16,
@@ -454,41 +310,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
-  inStockText: {
-    fontSize: 13,
-    color: '#4caf50',
-    marginBottom: 10,
-  },
-  outOfStockText: {
-    fontSize: 13,
-    color: '#ff3b30',
-    marginBottom: 10,
-  },
-  actionRow: {
-    flexDirection: isWeb && width > 500 ? 'row' : 'column',
-    justifyContent: 'space-between',
-    alignItems: isWeb && width > 500 ? 'center' : 'flex-start',
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: isWeb && width > 500 ? 0 : 10,
-  },
-  quantityButton: {
-    backgroundColor: '#f0f0f0',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantity: {
-    fontSize: 16,
-    fontWeight: '500',
-    paddingHorizontal: 15,
-  },
   actionButtons: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   actionButton: {
     flexDirection: 'row',
@@ -502,57 +326,6 @@ const styles = StyleSheet.create({
   },
   removeText: {
     color: '#ff3b30',
-  },
-  promoContainer: {
-    backgroundColor: 'white',
-    margin: 15,
-    marginTop: 0,
-    padding: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  promoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 10,
-    color: '#333',
-  },
-  promoInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  promoInput: {
-    flex: 1,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    paddingHorizontal: 15,
-    fontSize: 14,
-  },
-  promoButton: {
-    backgroundColor: '#0077b3',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 6,
-    marginLeft: 10,
-  },
-  promoButtonApplied: {
-    backgroundColor: '#4caf50',
-  },
-  promoButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  promoAppliedText: {
-    color: '#4caf50',
-    fontSize: 13,
-    marginTop: 8,
   },
   summaryContainer: {
     backgroundColor: 'white',

@@ -1,4 +1,4 @@
-// app/data/mockData.ts
+// app/data/mockData.tsx
 
 // Define type interfaces for our data
 export interface Product {
@@ -52,10 +52,10 @@ export interface Product {
       image: 'https://pfst.cf2.poecdn.net/base/image/84623588901ca1f12d5bbc2fc3426defa41a363b407e7607e5802d472e795d77?w=800&h=800',
       category: 'Tops',
       size: 'M',
-      condition: 'Excellent',
+      condition: 'Good',
       seller: 'fashionista22',
       gender: 'Men',
-      datePosted: new Date('2023-10-15T14:30:00')
+      datePosted: new Date('2024-10-15T14:30:00')
     },
     {
       id: '2',
@@ -67,7 +67,7 @@ export interface Product {
       condition: 'Like new',
       seller: 'vintage_vibes',
       gender: 'Men',
-      datePosted: new Date('2023-11-19T10:30:00')
+      datePosted: new Date('2024-11-19T10:30:00')
     },
     {
       id: '3',
@@ -79,7 +79,7 @@ export interface Product {
       condition: 'Good',
       seller: 'workwear_pro',
       gender: 'Men',
-      datePosted: new Date('2023-11-20T14:30:00')
+      datePosted: new Date('2024-11-20T14:30:00')
     },
     {
       id: '4',
@@ -91,7 +91,7 @@ export interface Product {
       condition: 'Good',
       seller: 'urban_threads',
       gender: 'Men',
-      datePosted: new Date('2023-11-05T09:15:00')
+      datePosted: new Date('2024-02-05T09:15:00')
     },
     {
       id: '5',
@@ -100,10 +100,10 @@ export interface Product {
       image: 'https://pfst.cf2.poecdn.net/base/image/93705a0a2a2f14c22014694ae166328ee323c83d428b2eb493c5cb3de201ac98?w=768&h=768',
       category: 'Tops',
       size: 'M',
-      condition: 'Excellent',
+      condition: 'Good',
       seller: 'eco_closet',
       gender: 'Women',
-      datePosted: new Date('2023-12-01T11:45:00')
+      datePosted: new Date('2024-12-01T11:45:00')
     },
     {
       id: '6',
@@ -115,7 +115,7 @@ export interface Product {
       condition: 'New with tags',
       seller: 'luxe_styles',
       gender: 'Unisex',
-      datePosted: new Date('2023-12-01T11:30:00')
+      datePosted: new Date('2024-04-01T11:30:00')
     },
     {
       id: '7',
@@ -127,7 +127,7 @@ export interface Product {
       condition: 'Good',
       seller: 'retro_finds',
       gender: 'Men',
-      datePosted: new Date('2023-10-20T14:45:00')
+      datePosted: new Date('2024-06-20T14:45:00')
     },
     {
       id: '8',
@@ -139,7 +139,7 @@ export interface Product {
       condition: 'Like new',
       seller: 'summer_vibes',
       gender: 'Women',
-      datePosted: new Date('2023-10-15T13:40:00')
+      datePosted: new Date('2024-08-15T13:40:00')
     },
     {
       id: '9',
@@ -148,10 +148,10 @@ export interface Product {
       image: 'https://pfst.cf2.poecdn.net/base/image/b7df18a7d27dbd3c5758ed5f96aa5482f1839dc7818c3b95efbd1138f2e58755?w=225&h=225',
       category: 'Footwear',
       size: 'XXL',
-      condition: 'Fair',
+      condition: 'Poor',
       seller: 'work_essentials',
       gender: 'Men',
-      datePosted: new Date('2023-10-05T09:45:00')
+      datePosted: new Date('2024-10-05T09:45:00')
     },
     {
       id: '10',
@@ -163,7 +163,7 @@ export interface Product {
       condition: 'Poor',
       seller: 'winter_styles',
       gender: 'Men',
-      datePosted: new Date('2023-09-30T15:10:00')
+      datePosted: new Date('2024-09-30T15:10:00')
     },
     {
       id: '11',
@@ -175,7 +175,7 @@ export interface Product {
       condition: 'Like new',
       seller: 'bob_45',
       gender: 'Men',
-      datePosted: new Date('2023-11-15T09:20:00')
+      datePosted: new Date('2025-4-29T09:20:00')
     },
     {
       id: '12',
@@ -187,19 +187,19 @@ export interface Product {
       condition: 'Like new',
       seller: 'sarah_yoyo',
       gender: 'Women',
-      datePosted: new Date('2023-09-20T15:30:00')
+      datePosted: new Date('2025-04-20T15:30:00')
     },
     {
       id: '13',
       name: 'Zara Blue Style T-shirt',
       price: 14.00,
-      image: 'https://pfst.cf2.poecdn.net/base/image/0e4af12b60ff4c76d87d0bd651ae5a988492bed97358e107f0299c18fc512a19?w=600&h=600',
+      image: 'https://cdn.shopify.com/s/files/1/1754/6207/files/3f45453a-8694-44eb-a1d5-79b3e9761f6e.jpg.webp?v=1723194966',
       category: 'Tops',
       size: 'XL',
       condition: 'Good',
       seller: 'ram_tom',
       gender: 'Women',
-      datePosted: new Date('2023-08-12T16:00:00')
+      datePosted: new Date('2025-02-12T16:00:00')
     },
     {
       id: '14',
@@ -211,7 +211,7 @@ export interface Product {
       condition: 'Like New',
       seller: 'drake_123',
       gender: 'Men',
-      datePosted: new Date('2023-12-01T11:30:00')
+      datePosted: new Date('2024-12-01T11:30:00')
     },
     {
       id: '15',
@@ -223,7 +223,7 @@ export interface Product {
       condition: 'Good',
       seller: 'urban_threads',
       gender: 'Men',
-      datePosted: new Date('2023-10-28T13:15:00')
+      datePosted: new Date('2024-10-28T13:15:00')
     },
     {
       id: '16',
@@ -232,22 +232,22 @@ export interface Product {
       image: 'https://pfst.cf2.poecdn.net/base/image/84623588901ca1f12d5bbc2fc3426defa41a363b407e7607e5802d472e795d77?w=800&h=800',
       category: 'Tops',
       size: 'M',
-      condition: 'Excellent',
+      condition: 'Good',
       seller: 'fashionista22',
       gender: 'Men',
-      datePosted: new Date('2023-11-19T10:30:00')
+      datePosted: new Date('2024-11-19T10:30:00')
     },
     {
       id: '17',
-      name: 'Green Henley Babydoll Top',
+      name: 'Full Sleeve Babydoll Top',
       price: 22.20,
       image: 'https://pfst.cf2.poecdn.net/base/image/93705a0a2a2f14c22014694ae166328ee323c83d428b2eb493c5cb3de201ac98?w=768&h=768',
       category: 'Tops',
       size: 'M',
-      condition: 'Excellent',
+      condition: 'Poor',
       seller: 'eco_closet',
       gender: 'Women',
-      datePosted: new Date('2023-12-05T08:45:00')
+      datePosted: new Date('2024-12-05T08:45:00')
     },
     {
       id: '18',
@@ -259,7 +259,7 @@ export interface Product {
       condition: 'Good',
       seller: 'retro_closet',
       gender: 'Men',
-      datePosted: new Date('2023-10-20T14:45:00')
+      datePosted: new Date('2024-07-20T14:45:00')
     },
     {
       id: '19',
@@ -271,7 +271,7 @@ export interface Product {
       condition: 'Like new',
       seller: 'bob_45',
       gender: 'Men',
-      datePosted: new Date('2023-09-30T15:10:00')
+      datePosted: new Date('2024-09-30T15:10:00')
     },
     {
       id: '20',
@@ -283,7 +283,7 @@ export interface Product {
       condition: 'Good',
       seller: 'denim_lover22',
       gender: 'Men',
-      datePosted: new Date('2023-12-05T08:30:00')
+      datePosted: new Date('2024-05-05T08:30:00')
     },
     {
       id: '21',
@@ -295,7 +295,7 @@ export interface Product {
       condition: 'New with tags',
       seller: 'luxe_styles',
       gender: 'Unisex',
-      datePosted: new Date('2023-10-10T16:15:00')
+      datePosted: new Date('2024-11-10T16:15:00')
     },
     {
       id: '22',
@@ -307,19 +307,19 @@ export interface Product {
       condition: 'New with tags',
       seller: 'summer_styles',
       gender: 'Women',
-      datePosted: new Date('2023-11-25T13:40:00')
+      datePosted: new Date('2024-11-25T13:40:00')
     },
     {
       id: '25',
       name: 'High-Waisted Cargo Pants',
-      price: 55.75,
-      image: 'https://pfst.cf2.poecdn.net/base/image/b7d82871895686bc45483fa21a77c789f99c723e78805baf5f36fb4309afbc1b?w=600&h=600',
+      price: 30.75,
+      image: 'https://bananarepublic.gap.com/webcontent/0052/356/664/cn52356664.jpg',
       category: 'Bottoms',
       size: 'M',
-      condition: 'Excellent',
+      condition: 'Good',
       seller: 'urban_style',
       gender: 'Women',
-      datePosted: new Date('2023-11-25T13:40:00')
+      datePosted: new Date('2025-01-25T13:40:00')
     },
     {
       id: '26',
@@ -331,7 +331,7 @@ export interface Product {
       condition: 'Like new',
       seller: 'jeans_expert',
       gender: 'Men',
-      datePosted: new Date('2023-12-08T10:20:00')
+      datePosted: new Date('2025-04-08T10:20:00')
     },
     {
       id: '27',
@@ -340,10 +340,10 @@ export interface Product {
       image: 'https://pfst.cf2.poecdn.net/base/image/b7df18a7d27dbd3c5758ed5f96aa5482f1839dc7818c3b95efbd1138f2e58755?w=225&h=225',
       category: 'Footwear',
       size: '40',
-      condition: 'Excellent',
+      condition: 'Good',
       seller: 'sport_enthusiast',
       gender: 'Unisex',
-      datePosted: new Date('2023-11-28T16:15:00')
+      datePosted: new Date('2024-11-28T16:15:00')
     },
     {
       id: '28',
@@ -355,19 +355,19 @@ export interface Product {
       condition: 'New with tags',
       seller: 'formal_style',
       gender: 'Men',
-      datePosted: new Date('2023-10-15T13:40:00')
+      datePosted: new Date('2024-10-15T13:40:00')
     },
     {
       id: '29',
-      name: 'Women\'s Heeled Sandals',
+      name: 'Silver Heels',
       price: 42.50,
-      image: 'https://pfst.cf2.poecdn.net/base/image/b7df18a7d27dbd3c5758ed5f96aa5482f1839dc7818c3b95efbd1138f2e58755?w=225&h=225',
+      image: 'https://i.ebayimg.com/images/g/uo0AAOSw0~JkcZG8/s-l400.jpg',
       category: 'Footwear',
       size: '38',
       condition: 'Like new',
       seller: 'fashion_queen',
       gender: 'Women',
-      datePosted: new Date('2023-12-10T10:20:00')
+      datePosted: new Date('2024-12-10T10:20:00')
     },
     {
       id: '30',
@@ -379,7 +379,7 @@ export interface Product {
       condition: 'Good',
       seller: 'casual_wear',
       gender: 'Unisex',
-      datePosted: new Date('2023-09-25T15:10:00')
+      datePosted: new Date('2024-09-25T15:10:00')
     },
   ];
   
@@ -448,7 +448,7 @@ export interface Product {
       name: 'Mike T.',
       location: 'Singapore',
       avatar: 'https://pfst.cf2.poecdn.net/base/image/b66dd985e74bf5ccbcb82b1d2fcdc36f10b7b7a8261d7e4fe3b096b6cdfd79c8?w=128&h=128',
-      text: "Great platform to find unique fashion pieces. The quality control is excellent - everything I've bought has been exactly as described.",
+      text: "Great platform to find unique fashion pieces. The quality control is'Good - everything I've bought has been exactly as described.",
       rating: 5
     },
     {
