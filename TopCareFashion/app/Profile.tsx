@@ -18,6 +18,10 @@ const ProfileScreen = () => {
   const [activeTab, setActiveTab] = useState('listings');
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleAdminAccess = () => {
+    router.push('/ViewUserAccount');
+  };
+  
   const [profileData, setProfileData] = useState({
     username: 'Jason Gretel',
     email: '',
@@ -180,15 +184,18 @@ const renderListings = () => (
                     <Ionicons name="camera" size={20} color="white" />
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.editIconContainer}
-                  onPress={handleEditProfile}
-                >
-                  <Ionicons name="pencil" size={20} color="white" />
-                </TouchableOpacity>
               </View>
               <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{profileData.username}</Text>
+                <View style={styles.headerRow}>
+                  <Text style={styles.profileName}>{profileData.username}</Text>
+                  <TouchableOpacity 
+                    style={styles.settingsButton}
+                    onPress={() => router.push('/AccountSettings')}
+                  >
+                    <Ionicons name="settings-outline" size={15} color="#0077b3" />
+                    <Text style={styles.settingsButtonText}>Settings</Text>
+                  </TouchableOpacity>
+                </View>
                 <View style={styles.statsRow}>
                   <View style={styles.statItem}>
                     <Text style={styles.statNumber}>{profileData.followers}</Text>
@@ -277,6 +284,13 @@ const renderListings = () => (
             {activeTab === 'listings' && renderListings()}
             {activeTab === 'purchased' && renderPurchased()}
             {activeTab === 'reviews' && renderReviews()}
+
+            <TouchableOpacity 
+              style={styles.adminButton}
+              onPress={handleAdminAccess}
+            >
+              <Text style={styles.adminButtonText}>Continue as Admin</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -399,19 +413,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'white',
     left: 30,
-  },
-  editIconContainer: {
-    position: 'absolute',
-    right: -5,
-    bottom: -5,
-    backgroundColor: '#0077b3',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: 'white',
   },
   profileInfo: {
     flex: 1,
@@ -601,6 +602,46 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     flexDirection: 'row',
+  },
+  adminButton: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginVertical: 20,
+    width: '90%',  // Make button wider
+    elevation: 3,  // Add shadow for Android
+    shadowColor: '#000',  // Add shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  adminButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,    
+    textAlign: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    padding: 8,
+    borderRadius: 20,
+    marginTop: -5,
+  },
+  settingsButtonText: {
+    color: '#0077b3',
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

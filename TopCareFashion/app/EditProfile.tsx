@@ -405,51 +405,6 @@ export default function EditProfile() {
             >
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
-
-            {/* Delete Account Button */}
-            <TouchableOpacity 
-              style={styles.deleteAccountButton}
-              disabled={isUpdating || isDeletingAccount}
-              onPress={() => {
-                Alert.alert(
-                  "Delete Account",
-                  "Are you sure you want to permanently delete your account? This action cannot be undone.",
-                  [
-                    {
-                      text: "Cancel",
-                      style: "cancel"
-                    },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: () => {
-                        setIsDeletingAccount(true);
-                        // Simulate account deletion process
-                        setTimeout(() => {
-                          setIsDeletingAccount(false);
-                          Alert.alert(
-                            "Account Deleted",
-                            "Your account has been successfully deleted.",
-                            [
-                              {
-                                text: "OK",
-                                onPress: () => router.replace("/Login")
-                              }
-                            ]
-                          );
-                        }, 1500);
-                      }
-                    }
-                  ]
-                );
-              }}
-            >
-              {isDeletingAccount ? (
-                <ActivityIndicator color="#ff3b30" size="small" />
-              ) : (
-                <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
-              )}
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
