@@ -1,7 +1,5 @@
-// context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Define the shape of the context
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<boolean>;
@@ -9,13 +7,12 @@ interface AuthContextType {
   user: UserData | null;
 }
 
-// User data type
 interface UserData {
   username: string;
   displayName: string;
+  role: 'user' | 'sysadmin'; // added role type
 }
 
-// Create the context with a default value
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   login: async () => false,
@@ -23,36 +20,38 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
 });
 
-// Custom hook to use the auth context
 export const useAuth = () => useContext(AuthContext);
 
-// Provider component that wraps the app
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
 
-  // Check if user is already logged in on component mount
   useEffect(() => {
-    // In a real app, you would check local storage, async storage, or cookies
-    // For demo, we'll just leave this empty
+ 
   }, []);
 
-  // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
-    // In a real app, you would validate credentials with your API
-    // For now, we'll just accept demo_user/password
-    if (username === 'test' && password === 'test') {
+    // Demo logic
+    if (username === 'sysadmin' && password === 'admin123') {
       setIsAuthenticated(true);
       setUser({
-        username: username,
+        username: 'sysadmin',
+        displayName: 'System Administrator',
+        role: 'sysadmin',
+      });
+      return true;
+    } else if (username === 'test' && password === 'test') {
+      setIsAuthenticated(true);
+      setUser({
+        username: 'test',
         displayName: 'Demo User',
+        role: 'user',
       });
       return true;
     }
     return false;
   };
 
-  // Logout function
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
