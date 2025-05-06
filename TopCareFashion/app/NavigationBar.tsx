@@ -54,6 +54,7 @@ const useAppNavigation = () => {
     goToCart: () => router.push("/Cart" as any),
     goToProfile: () => router.push("/profile" as any),
     goToCategory: (category: string) => router.push(`/${category.toLowerCase()}` as any),
+    goToProfile: () => router.push("/Profile" as any),
   };
 };
 
