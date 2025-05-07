@@ -499,7 +499,6 @@ export const reviews: Review[] = [
     helpful: 31,
     productId: '3'
   }
-<<<<<<< ours
   
   // Standardized mock products
   export const mockProducts: Product[] = [
@@ -958,6 +957,4 @@ export const reviews: Review[] = [
       productId: '3'
     }
   ];
-=======
-];
->>>>>>> theirs
+
