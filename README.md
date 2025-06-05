@@ -19,8 +19,3 @@ This project is part of CSIT321 - Project, it aims to develop a mobile applicati
 
 ### Explore our documentation/product
 * [Documents/Product Video](https://drive.google.com/drive/folders/1sauCpTKD2phnZQQRU5hN-MT8BiqdFt55?usp=sharing)
-
-## Project Structure
-The repository is structured as follows:
-```
-FYP-25-S1-03
