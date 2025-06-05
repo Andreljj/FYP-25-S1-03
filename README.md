@@ -4,3 +4,21 @@
 
 ---
 This project is part of CSIT321 - Project, it aims to develop a mobile application for C2C e-commerce service that act as a platform to connect buyers and sellers of pre-loved goods. The application will support various key features and functionalities such as:
+
+* Guest to browse products, search/filter items, view platform info, and register for membership
+* Registered Users to create AI-powered listings, buy/sell fashion items, use mix-and-match styling, and manage transactions
+* System Admin to manage user accounts, product categories, platform content, and monitor user activity
+
+### Group Members (UOW ID)
+* Andre Matthew Lau Jun Jie (7026304)
+* Yeo Shao Jie Ray (7772531)
+* Reshma Juwairiyyah D/O Subhan Jabbar Shahjehan (8379370)
+* Nila Kandasamy Rajamohan (8433252)
+* Jhon Lawwen (8236112)
+* Celine Leong Hao Ling (7356973)
+
+### Explore our documentation/product
+* [Documents/Product Video](https://drive.google.com/drive/folders/1sauCpTKD2phnZQQRU5hN-MT8BiqdFt55?usp=sharing)
+
+## Project Structure
+The repository is structured as follows:
