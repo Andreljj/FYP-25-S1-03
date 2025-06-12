@@ -3,7 +3,7 @@
 [Download and Try our app here - only on Android](https://expo.dev/accounts/jhonlawwen/projects/topcarefashion/builds/f54d5e38-391a-4ae5-bcdb-6f521349afce)
 
 ---
-This project is part of CSIT321 - Project, it aims to develop a mobile application for C2C e-commerce service that act as a platform to connect buyers and sellers of pre-loved goods. The application will support various key features and functionalities such as:
+This project is part of CSIT321 - Project, it aims to develop a mobile application for Top Care Fashion, a C2C e-commerce service that serves as a platform to connect buyers and sellers of pre-loved goods. The application will support various key features and functionalities such as:
 
 * Guest to browse products, search/filter items, view platform info, and register for membership
 * Registered Users to create AI-powered listings, buy/sell fashion items, use mix-and-match styling, and manage transactions
