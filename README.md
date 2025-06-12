@@ -25,11 +25,11 @@ The repository is organized as follows:
 ```
 FYP-25-S1-03
 ├── .expo/       
-├── .qodo/            Boundary, Controller and Entity Files
-├── tests/          Test Scripts to Insert Tests Data / Test Functions (phpunit)
-├── Dockerfile      Contains instructions for building the Docker image for the application
-├── README.md       This file
-├── .dockerignore   Files and directories to exclude when building Docker images
-├── composer.json   Defines PHP Dependencies (phpunit)
-├── composer.lock   Exact versions of PHP dependencies
+├── TopCareFashion                                 Mobile App Code (Frontend + Backend)
+├── android/                                       Android version of app
+├── backend/src/ai/venv/Lib/site-packages/         Object Detection Files
+├── .gitattributes
+├── README.md                                      This File
+├── package-lock.json
+├── package.json
 ```
